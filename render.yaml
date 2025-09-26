@@ -2,13 +2,12 @@ services:
   # Full-Stack IDP Application (Backend + Frontend)
   - type: web
     name: neocaptured-idp-app
-    env: docker
-    dockerfilePath: ./Dockerfile.simple
+    env: python
     plan: standard
     region: oregon
     branch: master
-    buildCommand: ""
-    startCommand: ""
+    buildCommand: "pip install -r backend/requirements_basic.txt"
+    startCommand: "cd backend && python -m uvicorn main_basic:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     autoDeploy: true
     envVars:
