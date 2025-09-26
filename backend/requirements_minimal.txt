@@ -1,0 +1,10 @@
+# Essential packages for NeoVision IDP
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+Pillow==11.1.0
+PyMuPDF==1.23.26
+python-dotenv==1.0.0
+supabase==2.18.1
+requests==2.32.3
+pydantic==2.11.9

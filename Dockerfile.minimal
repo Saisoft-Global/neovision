@@ -1,0 +1,28 @@
+# Minimal Dockerfile for Render free plan
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/backend
+
+WORKDIR /app
+
+# Install minimal system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install minimal Python dependencies
+COPY backend/requirements_minimal.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements_minimal.txt
+
+# Copy backend code
+COPY backend/ ./backend/
+
+# Create directories
+RUN mkdir -p backend/uploads backend/temp backend/logs
+
+# Simple startup
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
