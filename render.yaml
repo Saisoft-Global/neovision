@@ -4,7 +4,7 @@ services:
     name: neocaptured-idp-app
     env: docker
     dockerfilePath: ./Dockerfile
-    plan: starter
+    plan: free
     region: oregon
     branch: master
     buildCommand: ""
