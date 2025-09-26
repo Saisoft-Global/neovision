@@ -1,0 +1,57 @@
+# RunPod Template Configuration for NeoVision IDP
+name: neovision-idp
+image: runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+container_disk_in_gb: 50
+volume_in_gb: 20
+volume_mount_path: /workspace
+ports: "8000/http,80/http"
+env:
+  - name: PYTHONPATH
+    value: /workspace/backend
+  - name: ENVIRONMENT
+    value: production
+  - name: OCR_LANG
+    value: en,ar
+  - name: MAX_WORKERS
+    value: 2
+  - name: LOG_LEVEL
+    value: INFO
+  - name: MODEL_CACHE_DIR
+    value: /workspace/backend/models
+  - name: UPLOAD_DIR
+    value: /workspace/backend/uploads
+  - name: TEMP_DIR
+    value: /workspace/backend/temp
+  - name: DATABASE_TYPE
+    value: supabase
+  - name: SUPABASE_URL
+    value: https://your-project-id.supabase.co
+  - name: SUPABASE_ANON_KEY
+    value: your-supabase-anon-key
+  - name: SUPABASE_SERVICE_ROLE_KEY
+    value: your-supabase-service-role-key
+  - name: MODEL_DOWNLOAD_ON_STARTUP
+    value: "true"
+  - name: ENABLE_MODEL_TRAINING
+    value: "true"
+  - name: MAX_FILE_SIZE
+    value: "50MB"
+  - name: WORKER_TIMEOUT
+    value: "300"
+  - name: CUDA_VISIBLE_DEVICES
+    value: "0"
+  - name: PYTORCH_CUDA_ALLOC_CONF
+    value: "max_split_size_mb:512"
+startup_script: |
+  #!/bin/bash
+  echo "🚀 Starting NeoVision IDP on RunPod..."
+  
+  # Clone your repository
+  cd /workspace
+  git clone https://github.com/Saisoft-Global/neovision.git .
+  
+  # Make deployment script executable
+  chmod +x runpod-deploy.sh
+  
+  # Run deployment
+  ./runpod-deploy.sh
