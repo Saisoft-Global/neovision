@@ -30,6 +30,8 @@ env:
     value: your-supabase-anon-key
   - name: SUPABASE_SERVICE_ROLE_KEY
     value: your-supabase-service-role-key
+  - name: FRONTEND_URL
+    value: https://your-runpod-url.onrender.com
   - name: MODEL_DOWNLOAD_ON_STARTUP
     value: "true"
   - name: ENABLE_MODEL_TRAINING
