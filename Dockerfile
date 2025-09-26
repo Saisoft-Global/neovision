@@ -60,6 +60,10 @@ RUN apt-get update && apt-get install -y \
     libcairo-gobject2 \
     libgtk-3-0 \
     libgdk-pixbuf2.0-0 \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ara \
+    libtesseract-dev \
     curl \
     wget \
     nginx \
@@ -68,16 +72,6 @@ RUN apt-get update && apt-get install -y \
 # Copy backend requirements and install
 COPY backend/requirements.txt ./backend/
 RUN pip install --no-cache-dir -r backend/requirements.txt
-
-# Install additional ML dependencies
-RUN pip install --no-cache-dir \
-    paddlepaddle==2.5.2 \
-    paddleocr==2.7.3 \
-    spacy==3.7.2 \
-    python-dotenv==1.0.0 \
-    pdf2image==1.17.0 \
-    python-magic==0.4.27 \
-    opencv-python==4.9.0.80
 
 # Download spaCy model
 RUN python -m spacy download en_core_web_sm
