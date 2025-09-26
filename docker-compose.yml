@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - mongo
+      - redis
+    networks:
+      - neocapture_network
+    environment:
+      - DATABASE_URL=postgresql://postgres:yourpassword@postgres/neocapture
+      - MONGO_URL=mongodb://mongo:27017/neocapture
+      - REDIS_URL=redis://redis:6379
+      - OCR_LANG=en,ar
+      - USE_TROCR=true
+      - TROCR_FALLBACK_THRESHOLD=0.65
+      - USE_DONUT=true
+      - DONUT_THRESHOLD=0.60
+      - DONUT_FORCE_TYPES=handwritten,unknown
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - neocapture_network
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    volumes:
+      - ./dist:/app
+
+  postgres:
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_DB=neocapture
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=yourpassword
+    ports:
+      - "5432:5432"
+    networks:
+      - neocapture_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongo:
+    image: mongo:4.4
+    restart: always
+    ports:
+      - "27017:27017"
+    networks:
+      - neocapture_network
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:6.2
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - neocapture_network
+    volumes:
+      - redis_data:/data
+
+  celery_worker:
+    build: ./backend
+    command: celery -A main.celery_app worker --loglevel=info
+    depends_on:
+      - backend
+      - redis
+    networks:
+      - neocapture_network
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - OCR_LANG=en,ar
+      - USE_TROCR=true
+      - TROCR_FALLBACK_THRESHOLD=0.65
+      - USE_DONUT=true
+      - DONUT_THRESHOLD=0.60
+      - DONUT_FORCE_TYPES=handwritten,unknown
+    volumes:
+      - ./backend:/app
+
+networks:
+  neocapture_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  mongo_data:
+  redis_data:

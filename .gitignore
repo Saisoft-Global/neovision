@@ -1,0 +1,163 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+neoidp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Large model files and data
+*.bin
+*.safetensors
+*.h5
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.ckpt
+*.pkl
+*.joblib
+models/trained/
+models/layout/
+models/spacy/
+backend*/models/trained/
+backend*/models/layout/
+backend*/models/spacy/
+*.zip
+*.tar.gz
+*.rar
+
+# Temporary files
+temp/
+tmp/
+uploads/
+*.tmp
+*.temp
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Large files that shouldn't be in git
+*.pdf
+*.docx
+*.xlsx
+*.pptx
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.wma
+
+# Backup files
+*.bak
+*.backup
+*_backup
+*_old
+*_bkp
+
+# Test files
+test_files/
+test_*
+*_test.py
+tests/
+
+# Documentation that's not needed
+*.md
+!README.md
+!DEPLOYMENT_GUIDE.md
+!DATABASE_SETUP_GUIDE.md
+!ENVIRONMENT_SETUP.md
+!IMPLEMENTATION_GUIDE.md
+!NEW_PROJECT_SETUP.md
+!SUPABASE_SETUP_GUIDE.md
+!CLIENT_DEPLOYMENT.md
+!DOCKER_DEPLOYMENT.md
+!FULLSTACK_DEPLOYMENT_SUMMARY.md
+!PRODUCTION_ARCHITECTURE.md
+!README-DEPLOYMENT.md
+!DATABASE_COMPARISON.md
+!EXISTING_SUPABASE_SETUP.md

@@ -1,0 +1,45 @@
+{
+  "document_id": "training_1758560939654_ilx484adb28_INV_000038_pdf",
+  "annotations": [
+    {
+      "text": "Building No 280,Taweelah Kizad Abu Dhabi United Arab Emirates TRN 104058864000003 Abu Dhabi Commercial Bank PJSC Salam Street, Pobox 939 United Arab Emirates",
+      "bbox": [
+        142,
+        118.66665649414062,
+        184,
+        113
+      ],
+      "label_id": 4,
+      "pageNumber": 1,
+      "stableId": "annotation_1758560948136_yv8rylbehdi"
+    },
+    {
+      "text": "Due On Receipt 26 Feb 2025 IT-2023-003-04 /CW2306026_ 100228495600003 Amount 14,239.35",
+      "bbox": [
+        820,
+        171.66665649414062,
+        72,
+        134
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758560957758_hcw9oydhx6t",
+      "pageNumber": 1,
+      "stableId": "annotation_1758560957758_z32djut75jq"
+    },
+    {
+      "text": "5.00%",
+      "bbox": [
+        740,
+        322.6666660308838,
+        0,
+        0
+      ],
+      "label_id": 4,
+      "tempId": "tmp_1758560962018_gjv3s95iu3f",
+      "pageNumber": 1,
+      "stableId": "annotation_1758560962018_aw7e1rf7jbk"
+    }
+  ],
+  "timestamp": "2025-09-22T17:09:44.153458",
+  "status": "pending_review"
+}

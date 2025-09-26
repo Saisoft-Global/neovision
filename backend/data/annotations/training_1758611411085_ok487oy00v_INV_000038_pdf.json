@@ -1,0 +1,111 @@
+{
+  "document_id": "training_1758611411085_ok487oy00v_INV_000038_pdf",
+  "annotations": [
+    {
+      "text": "",
+      "bbox": [
+        151,
+        19.33331298828125,
+        15,
+        51
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758611704672_7kmjdx976i",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611704672_v78hx5wm42g"
+    },
+    {
+      "text": "",
+      "bbox": [
+        298,
+        116.33331298828125,
+        0,
+        0
+      ],
+      "label_id": 4,
+      "tempId": "tmp_1758611708195_gppd1waip89",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611708195_pgxb4agzx3"
+    },
+    {
+      "text": "",
+      "bbox": [
+        543,
+        134.33331298828125,
+        1,
+        0
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758611711547_3qdjzpc5kza",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611711547_cx4nheq87t"
+    },
+    {
+      "text": "United Arab Emirates TRN 104058864000003 Abu Dhabi Commercial Bank PJSC Salam Street, Pobox 939",
+      "bbox": [
+        181,
+        120.66666412353516,
+        198,
+        91
+      ],
+      "label_id": 4,
+      "tempId": "tmp_1758611716527_r2dxsg63lw",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611716527_ku7x8adx8no"
+    },
+    {
+      "text": "",
+      "bbox": [
+        352,
+        231.66666412353516,
+        12,
+        22
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758611719781_twjuxd6bp5q",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611719781_510x35qpwq7"
+    },
+    {
+      "text": "26 Feb 2025 Invoice Date : Due On Receipt Terms :",
+      "bbox": [
+        583,
+        142.66666412353516,
+        278,
+        42
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758611732939_vo1fugst09",
+      "pageNumber": 1,
+      "stableId": "annotation_1758611732939_gm4nue1ala7"
+    },
+    {
+      "text": "9.00",
+      "bbox": [
+        440,
+        307.66666412353516,
+        50,
+        100
+      ],
+      "label_id": 1,
+      "tempId": "tmp_1758612203431_ml8dropekk",
+      "pageNumber": 1,
+      "stableId": "annotation_1758612203431_ysdj9cyvdk"
+    },
+    {
+      "text": "",
+      "bbox": [
+        596,
+        309.3333320617676,
+        0,
+        0
+      ],
+      "label_id": 3,
+      "tempId": "tmp_1758612205947_pwv7zhh18xb",
+      "pageNumber": 1,
+      "stableId": "annotation_1758612205947_a4z0wadb5l"
+    }
+  ],
+  "timestamp": "2025-09-23T07:28:15.026208",
+  "status": "pending_review"
+}

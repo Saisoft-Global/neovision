@@ -1,0 +1,19 @@
+{
+  "document_id": "training_1758616179737_uvt4kb9iaps_Handwritten_document_png",
+  "annotations": [
+    {
+      "text": "",
+      "bbox": [
+        8,
+        9,
+        632,
+        178
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758616192851_mrbifbgsa7"
+    }
+  ],
+  "timestamp": "2025-09-23T08:30:03.818207",
+  "status": "pending_review"
+}

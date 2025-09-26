@@ -1,0 +1,336 @@
+{
+  "corrections": {
+    "invoice": {
+      "invoice_number": [
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757737942.6900403
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757739227.773319
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757739810.7118583
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757740233.8930662
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757740471.4292016
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757741609.2750452
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757742742.6802397
+        },
+        {
+          "original": "INV-000038",
+          "corrected": "INV-000038",
+          "context": {
+            "text": "Invoice Number: INV-000038"
+          },
+          "timestamp": 1757743093.2885401
+        }
+      ],
+      "date": [
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757737942.6900403
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757739227.7813435
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757739810.7118583
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757740233.8950794
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757740471.4409566
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757741609.2843702
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757742742.7101674
+        },
+        {
+          "original": "2024-04-13",
+          "corrected": "2024-04-13",
+          "context": {
+            "text": "Date: 2024-04-13"
+          },
+          "timestamp": 1757743093.292555
+        }
+      ],
+      "amount": [
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757737942.7046642
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757739227.7868695
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757739810.721728
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757740233.9011037
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757740471.448871
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757741609.300576
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757742742.7329633
+        },
+        {
+          "original": "1000.00",
+          "corrected": "1000.00",
+          "context": {
+            "text": "Total Amount: $1000.00"
+          },
+          "timestamp": 1757743093.2985797
+        }
+      ]
+    }
+  },
+  "annotations": {},
+  "patterns": {
+    "invoice": {
+      "invoice_number": [
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Invoice Number: INV-000038",
+          "correction": "INV-000038",
+          "confidence": 0.8
+        }
+      ],
+      "date": [
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Date: 2024-04-13",
+          "correction": "2024-04-13",
+          "confidence": 0.8
+        }
+      ],
+      "amount": [
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        },
+        {
+          "pattern": "Total Amount: $1000.00",
+          "correction": "1000.00",
+          "confidence": 0.8
+        }
+      ]
+    }
+  },
+  "confidence_history": {}
+}

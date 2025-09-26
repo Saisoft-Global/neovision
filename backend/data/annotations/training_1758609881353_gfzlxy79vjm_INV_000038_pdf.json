@@ -1,0 +1,103 @@
+{
+  "document_id": "training_1758609881353_gfzlxy79vjm_INV_000038_pdf",
+  "annotations": [
+    {
+      "text": "",
+      "bbox": [
+        613,
+        102,
+        62,
+        27
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758609941172_dfhadmuw9eh"
+    },
+    {
+      "text": "26 Feb 2025 Invoice Date : Due On Receipt Terms : 26 Feb 2025 Due Date : IT-2023-003-04 P.O.# : /CW2306026_ 100228495600003 VAT No. : Taxable Tax Amount Amount 13,561.29 678.06 14,239.35",
+      "bbox": [
+        577,
+        118,
+        219,
+        199
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758609982143_jwdvq4hg26"
+    },
+    {
+      "text": "Item & Description Monthly ADCB HR Systems Support Resource (1st- Jan - 2025 to 10-Jan-",
+      "bbox": [
+        183,
+        294,
+        163,
+        59
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758609986601_81y04wuv0vu"
+    },
+    {
+      "text": "",
+      "bbox": [
+        326,
+        399,
+        0,
+        0
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758609988275_i8ngyhoq1j"
+    },
+    {
+      "text": "",
+      "bbox": [
+        450,
+        411,
+        0,
+        0
+      ],
+      "label_id": 5,
+      "pageNumber": 1,
+      "stableId": "annotation_1758609990961_a2pxedroem5"
+    },
+    {
+      "text": "Thanks for your Please pay invoice via Bank Transfer to:",
+      "bbox": [
+        249,
+        445,
+        254,
+        101
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758610179200_0gg7n1qv09h"
+    },
+    {
+      "text": "",
+      "bbox": [
+        260,
+        255,
+        0,
+        1
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758610181297_ar2tm2mjyda"
+    },
+    {
+      "text": "",
+      "bbox": [
+        408,
+        239,
+        1,
+        0
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758610201851_bsjpy05e11v"
+    }
+  ],
+  "timestamp": "2025-09-23T06:50:03.344544",
+  "status": "pending_review"
+}

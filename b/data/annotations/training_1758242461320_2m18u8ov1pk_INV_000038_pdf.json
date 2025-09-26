@@ -1,0 +1,163 @@
+{
+  "document_id": "training_1758242461320_2m18u8ov1pk_INV_000038_pdf",
+  "annotations": [
+    {
+      "text": "",
+      "bbox": [
+        615,
+        108.33332824707031,
+        57,
+        18
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242472112_ew1bvix8r5"
+    },
+    {
+      "text": "AED14,239.35",
+      "bbox": [
+        508,
+        124.33332824707031,
+        112,
+        23
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242624155_jgwii5nrnzg"
+    },
+    {
+      "text": "",
+      "bbox": [
+        665,
+        95.33333206176758,
+        73,
+        24
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242654922_krh3vfycmsr"
+    },
+    {
+      "text": "26 Feb 2025 Due On Receipt 26 Feb 2025 IT-2023-003-04 /CW2306026_ 100228495600003",
+      "bbox": [
+        659,
+        135.33333206176758,
+        216,
+        97
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242661774_su93pcbgblq"
+    },
+    {
+      "text": "United Arab Emirates TRN 104058864000003 Abu Dhabi Commercial Bank PJSC Salam Street, Pobox 939",
+      "bbox": [
+        180,
+        119.33333206176758,
+        224,
+        95
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242682846_lu3178n0rg7"
+    },
+    {
+      "text": "",
+      "bbox": [
+        312,
+        223.33333206176758,
+        0,
+        0
+      ],
+      "label_id": 4,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242686193_wedxlezo4h"
+    },
+    {
+      "text": "Invoice for HRMS Support",
+      "bbox": [
+        164,
+        268.3333320617676,
+        0,
+        0
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242699020_jzii19ddb6"
+    },
+    {
+      "text": "VAT No. :",
+      "bbox": [
+        616,
+        236.33333206176758,
+        56,
+        14
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242774474_81q965fhiml"
+    },
+    {
+      "text": "",
+      "bbox": [
+        731,
+        360.3333320617676,
+        0,
+        0
+      ],
+      "label_id": 2,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242778377_sjmdoxt3szk"
+    },
+    {
+      "text": "Sub Total",
+      "bbox": [
+        497,
+        325,
+        45,
+        16
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242795160_swhp9wirtll"
+    },
+    {
+      "text": "5.00%",
+      "bbox": [
+        615,
+        326.33333587646484,
+        67,
+        7
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242803827_b17ya2ja4f"
+    },
+    {
+      "text": "13,561.29 678.06 14,239.35 5.00%",
+      "bbox": [
+        591,
+        322,
+        277,
+        24
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242818021_hv71x1ie78q"
+    },
+    {
+      "text": "1,506.81 13,561.29 13,561.29 Sub Total",
+      "bbox": [
+        538,
+        316,
+        120,
+        35
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758242823391_ufk0lombf9n"
+    }
+  ],
+  "timestamp": "2025-09-19T00:49:27.516637",
+  "status": "pending_review"
+}

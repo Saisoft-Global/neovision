@@ -1,0 +1,20 @@
+{
+  "document_id": "training_1758616470848_fzw9aen3526_Handwritten_document_png",
+  "annotations": [
+    {
+      "text": "tcBy ENnERPAsES INC rBy 1ST QTR fEBZ8NT c7 af s^ q 7n8a wg Nel d,370, 898 vs 823, 988",
+      "bbox": [
+        6,
+        5.666656494140625,
+        652,
+        187
+      ],
+      "label_id": 6,
+      "tempId": "tmp_1758616485959_xv92yyi6zzr",
+      "pageNumber": 1,
+      "stableId": "annotation_1758616485959_338fidn5kru"
+    }
+  ],
+  "timestamp": "2025-09-23T08:41:29.328611",
+  "status": "pending_review"
+}

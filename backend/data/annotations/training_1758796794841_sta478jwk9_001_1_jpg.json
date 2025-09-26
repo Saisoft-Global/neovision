@@ -1,0 +1,31 @@
+{
+  "document_id": "training_1758796794841_sta478jwk9_001_1_jpg",
+  "annotations": [
+    {
+      "text": "U nogs jsioluiii gio upalecnojeota",
+      "bbox": [
+        101,
+        185.6666717529297,
+        569,
+        182
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758796815433_9wnp7mgx2h"
+    },
+    {
+      "text": "nogs jsioluiii gio upalecnojeota",
+      "bbox": [
+        159,
+        233.6666717529297,
+        245,
+        137
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758796826254_oseosrnw0dr"
+    }
+  ],
+  "timestamp": "2025-09-25T10:40:40.806445",
+  "status": "pending_review"
+}

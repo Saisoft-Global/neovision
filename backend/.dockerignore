@@ -1,0 +1,88 @@
+# Virtual environment
+neoidp/
+venv/
+env/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Model files (will be downloaded during build)
+models/trained/
+models/layout/
+models/spacy/
+
+# Uploads
+uploads/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.doc
+*.docx
+
+# Data files
+data/
+*.json
+*.csv
+
+# Backup files
+*_backup/
+*_old/
+*_bkp/
+
+# Jupyter notebooks
+*.ipynb
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/

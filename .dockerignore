@@ -1,0 +1,113 @@
+# Virtual environment
+backend/neoidp/
+venv/
+env/
+.venv/
+
+# Node modules
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+README*
+
+# Test files
+tests/
+test_*.py
+*_test.py
+backend/tests/
+
+# Logs
+*.log
+logs/
+backend/logs/
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+backend/temp/
+
+# Model files (will be downloaded during build)
+backend/models/trained/
+backend/models/layout/
+backend/models/spacy/
+
+# Uploads
+uploads/
+backend/uploads/
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.doc
+*.docx
+
+# Data files
+data/
+backend/data/
+*.json
+*.csv
+
+# Backup files
+*_backup/
+*_old/
+*_bkp/
+backend/models_bkp/
+
+# Jupyter notebooks
+*.ipynb
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+
+# Coverage reports
+htmlcov/
+.coverage
+.pytest_cache/
+
+# Build artifacts
+*.egg-info/
+
+# Development scripts
+start-dev.bat
+start-dev.ps1
+setup-deployment.sh
+
+# Deployment files (keep only what's needed)
+.github/

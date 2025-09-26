@@ -1,0 +1,31 @@
+{
+  "document_id": "training_1758613080981_6x8ogm9ghm_Handwritten_document_png",
+  "annotations": [
+    {
+      "text": "",
+      "bbox": [
+        58,
+        39.666656494140625,
+        649,
+        196
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758613094595_ets805riv2a"
+    },
+    {
+      "text": "",
+      "bbox": [
+        90,
+        230.66665649414062,
+        0,
+        1
+      ],
+      "label_id": 1,
+      "pageNumber": 1,
+      "stableId": "annotation_1758613129767_2zeo31h0gr7"
+    }
+  ],
+  "timestamp": "2025-09-23T07:42:52.851430",
+  "status": "pending_review"
+}

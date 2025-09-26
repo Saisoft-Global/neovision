@@ -1,0 +1,76 @@
+services:
+  # Full-Stack IDP Application (Backend + Frontend)
+  - type: web
+    name: neocaptured-idp-app
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: ""
+    startCommand: ""
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: PYTHONPATH
+        value: /app/backend
+      - key: OCR_LANG
+        value: en,ar
+      - key: FRONTEND_URL
+        value: https://neocaptured-idp-app.onrender.com
+      - key: CORS_ORIGINS
+        value: https://neocaptured-idp-app.onrender.com,http://localhost:5173,http://localhost:3000
+      - key: MAX_WORKERS
+        value: 2
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MODEL_CACHE_DIR
+        value: /app/backend/models
+      - key: UPLOAD_DIR
+        value: /app/backend/uploads
+      - key: TEMP_DIR
+        value: /app/backend/temp
+      - key: VITE_API_URL
+        value: https://neocaptured-idp-app.onrender.com
+      - key: VITE_APP_NAME
+        value: NeoCaptured IDP
+      # Supabase Configuration (Your existing setup)
+      - key: SUPABASE_URL
+        value: https://your-project-id.supabase.co
+      - key: SUPABASE_ANON_KEY
+        value: your-supabase-anon-key
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        value: your-supabase-service-role-key
+      - key: DATABASE_TYPE
+        value: supabase
+      # Alternative: PostgreSQL (if not using Supabase)
+      # - key: DATABASE_URL
+      #   value: postgresql://neocaptured_user:password@neocaptured-idp-db:5432/neocaptured_idp
+
+  # Database Option 1: Supabase (Recommended)
+  # No database service needed - Supabase is external
+  # Just add environment variables to main service
+
+  # Database Option 2: PostgreSQL (Alternative)
+  - type: pserv
+    name: neocaptured-idp-db
+    env: docker
+    image: postgres:15-alpine
+    plan: starter
+    region: oregon
+    envVars:
+      - key: POSTGRES_DB
+        value: neocaptured_idp
+      - key: POSTGRES_USER
+        value: neocaptured_user
+      - key: POSTGRES_PASSWORD
+        generateValue: true
+
+  # Redis Cache
+  - type: redis
+    name: neocaptured-idp-redis
+    plan: starter
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
