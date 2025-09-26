@@ -3,8 +3,8 @@ services:
   - type: web
     name: neocaptured-idp-app
     env: docker
-    dockerfilePath: ./Dockerfile.minimal
-    plan: free
+    dockerfilePath: ./Dockerfile.production
+    plan: starter
     region: oregon
     branch: master
     buildCommand: ""
@@ -45,3 +45,11 @@ services:
         value: your-supabase-service-role-key
       - key: DATABASE_TYPE
         value: supabase
+      - key: MODEL_DOWNLOAD_ON_STARTUP
+        value: "true"
+      - key: ENABLE_MODEL_TRAINING
+        value: "true"
+      - key: MAX_FILE_SIZE
+        value: "50MB"
+      - key: WORKER_TIMEOUT
+        value: "300"

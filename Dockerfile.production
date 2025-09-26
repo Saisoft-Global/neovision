@@ -1,0 +1,126 @@
+# Production Dockerfile for NeoVision IDP
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/app/backend
+
+WORKDIR /app
+
+# Install system dependencies for ML
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgcc-s1 \
+    libfontconfig1 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxrandr2 \
+    libxss1 \
+    libgconf-2-4 \
+    libasound2 \
+    libxtst6 \
+    libxrandr2 \
+    libasound2 \
+    libpangocairo-1.0-0 \
+    libatk1.0-0 \
+    libcairo-gobject2 \
+    libgtk-3-0 \
+    libgdk-pixbuf2.0-0 \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ara \
+    libtesseract-dev \
+    curl \
+    wget \
+    nginx \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Download spaCy model
+RUN python -m spacy download en_core_web_sm
+
+# Copy backend code
+COPY backend/ ./backend/
+
+# Create necessary directories
+RUN mkdir -p backend/models/trained backend/models/layout backend/models/spacy \
+    backend/uploads backend/temp backend/logs static
+
+# Copy frontend build (we'll handle this separately)
+COPY src/ ./src/
+COPY package.json ./
+COPY vite.config.ts ./
+COPY index.html ./
+
+# Install Node.js and build frontend
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install \
+    && npm run build \
+    && cp -r dist/* static/ \
+    && rm -rf src/ node_modules/ dist/
+
+# Create nginx configuration
+RUN echo 'server { \
+    listen 80; \
+    server_name _; \
+    client_max_body_size 50M; \
+    \
+    location / { \
+        root /app/static; \
+        try_files $uri $uri/ /index.html; \
+    } \
+    \
+    location /api/ { \
+        proxy_pass http://127.0.0.1:8000/; \
+        proxy_set_header Host $host; \
+        proxy_set_header X-Real-IP $remote_addr; \
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; \
+        proxy_set_header X-Forwarded-Proto $scheme; \
+        proxy_read_timeout 300s; \
+        proxy_connect_timeout 75s; \
+    } \
+    \
+    location /health { \
+        proxy_pass http://127.0.0.1:8000/health; \
+        access_log off; \
+    } \
+}' > /etc/nginx/sites-available/default
+
+# Create startup script
+RUN echo '#!/bin/bash \n\
+set -e \n\
+\n\
+# Start backend in background \n\
+cd /app/backend && python -m uvicorn main:app --host 127.0.0.1 --port 8000 --workers 1 & \n\
+\n\
+# Wait for backend to start \n\
+sleep 15 \n\
+\n\
+# Start nginx in foreground \n\
+nginx -g "daemon off;" \n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost/health || exit 1
+
+# Expose port
+EXPOSE 80
+
+# Start the application
+CMD ["/app/start.sh"]
