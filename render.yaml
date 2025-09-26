@@ -3,7 +3,7 @@ services:
   - type: web
     name: neocaptured-idp-app
     env: docker
-    dockerfilePath: ./Dockerfile.production
+    dockerfilePath: ./Dockerfile.render
     plan: standard
     region: oregon
     branch: master
