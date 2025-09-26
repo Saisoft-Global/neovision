@@ -36,7 +36,7 @@ services:
         value: https://neocaptured-idp-app.onrender.com
       - key: VITE_APP_NAME
         value: NeoCaptured IDP
-      # Supabase Configuration (Your existing setup)
+      # Supabase Configuration (Replace with your actual values)
       - key: SUPABASE_URL
         value: https://your-project-id.supabase.co
       - key: SUPABASE_ANON_KEY
@@ -45,30 +45,3 @@ services:
         value: your-supabase-service-role-key
       - key: DATABASE_TYPE
         value: supabase
-      # Alternative: PostgreSQL (if not using Supabase)
-      # - key: DATABASE_URL
-      #   value: postgresql://neocaptured_user:password@neocaptured-idp-db:5432/neocaptured_idp
-
-  # Database Option 1: Supabase (Recommended)
-  # No database service needed - Supabase is external
-  # Just add environment variables to main service
-
-  # Database Option 2: PostgreSQL (Alternative)
-  - type: pserv
-    name: neocaptured-idp-db
-    plan: starter
-    region: oregon
-    envVars:
-      - key: POSTGRES_DB
-        value: neocaptured_idp
-      - key: POSTGRES_USER
-        value: neocaptured_user
-      - key: POSTGRES_PASSWORD
-        generateValue: true
-
-  # Redis Cache
-  - type: redis
-    name: neocaptured-idp-redis
-    plan: starter
-    region: oregon
-    maxmemoryPolicy: allkeys-lru
