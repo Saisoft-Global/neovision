@@ -5,7 +5,7 @@ services:
     plan: standard
     region: oregon
     branch: master
-    buildCommand: "pip install -r backend/requirements.txt"
+    buildCommand: "pip install -r backend/requirements_essential.txt"
     startCommand: "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     autoDeploy: true
