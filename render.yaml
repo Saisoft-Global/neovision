@@ -56,8 +56,6 @@ services:
   # Database Option 2: PostgreSQL (Alternative)
   - type: pserv
     name: neocaptured-idp-db
-    env: docker
-    image: postgres:15-alpine
     plan: starter
     region: oregon
     envVars:
