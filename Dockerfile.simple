@@ -1,17 +1,14 @@
-# Simplified Dockerfile for Render free plan
+# Ultra-simple Dockerfile for Render
 FROM python:3.9-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONPATH=/app/backend
 
-# Set work directory
 WORKDIR /app
 
-# Install system dependencies (minimal set)
+# Install minimal system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libgl1-mesa-glx \
@@ -23,35 +20,15 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install Python dependencies
-COPY backend/requirements.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements.txt
+# Copy and install minimal Python dependencies
+COPY backend/requirements_minimal_working.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements_minimal_working.txt
 
 # Copy backend code
 COPY backend/ ./backend/
 
-# Create necessary directories
+# Create directories
 RUN mkdir -p backend/uploads backend/temp backend/logs
 
-# Copy frontend build (we'll build this separately or use a simple static version)
-COPY src/ ./src/
-COPY package.json ./
-COPY vite.config.ts ./
-COPY index.html ./
-
-# Install Node.js and build frontend
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
-    && npm install \
-    && npm run build
-
-# Create startup script
-RUN echo '#!/bin/bash \n\
-cd /app/backend && python -m uvicorn main:app --host 0.0.0.0 --port 8000 \n\
-' > /app/start.sh && chmod +x /app/start.sh
-
-# Expose port
-EXPOSE 8000
-
-# Start the application
-CMD ["/app/start.sh"]
+# Simple startup
+CMD ["python", "-m", "uvicorn", "backend.main_simple:app", "--host", "0.0.0.0", "--port", "8000"]
