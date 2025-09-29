@@ -46,9 +46,46 @@ apt-get install -y \
 echo "🐍 Installing Python dependencies..."
 pip install --no-cache-dir -r backend/requirements.txt
 
+# Configure caches to persist models across restarts
+echo "🗄️  Configuring model caches..."
+export HF_HOME=/workspace/cache/hf
+export XDG_CACHE_HOME=/workspace/cache/xdg
+export PADDLE_OCR_CACHE_DIR=/workspace/cache/paddle
+mkdir -p "$HF_HOME" "$XDG_CACHE_HOME" "$PADDLE_OCR_CACHE_DIR"
+
 # Download spaCy model
 echo "📚 Downloading spaCy model..."
-python -m spacy download en_core_web_sm
+python -m spacy download en_core_web_sm || true
+
+# Preload PaddleOCR models (en, ar) to avoid runtime downloads
+echo "🔻 Preloading PaddleOCR models..."
+python - <<'PY'
+from paddleocr import PaddleOCR
+for lang in ["en", "ar"]:
+    try:
+        print(f"Preloading PaddleOCR for {lang}...")
+        PaddleOCR(use_angle_cls=True, lang=lang, use_gpu=False, show_log=False)
+    except Exception as e:
+        print("PaddleOCR preload failed:", lang, e)
+PY
+
+# Preload Hugging Face models (LayoutLMv3, optional TrOCR)
+echo "🤗 Preloading Hugging Face models..."
+python - <<'PY'
+from transformers import AutoProcessor, AutoModelForTokenClassification, VisionEncoderDecoderModel, TrOCRProcessor
+try:
+    print("Preloading LayoutLMv3 base...")
+    proc = AutoProcessor.from_pretrained("microsoft/layoutlmv3-base")
+    mdl  = AutoModelForTokenClassification.from_pretrained("microsoft/layoutlmv3-base")
+except Exception as e:
+    print("LayoutLMv3 preload failed:", e)
+try:
+    print("Preloading TrOCR base handwritten (optional)...")
+    trocr_proc = TrOCRProcessor.from_pretrained("microsoft/trocr-base-handwritten")
+    trocr_model = VisionEncoderDecoderModel.from_pretrained("microsoft/trocr-base-handwritten")
+except Exception as e:
+    print("TrOCR preload skipped:", e)
+PY
 
 # Create necessary directories
 echo "📁 Creating directories..."
@@ -106,8 +143,13 @@ set -e
 
 echo "🚀 Starting NeoVision IDP..."
 
-# Start backend with GPU support
-cd /workspace/backend && python -m uvicorn main_lazy:app --host 0.0.0.0 --port 8001 --workers 1 &
+# Export cache envs for runtime as well
+export HF_HOME=/workspace/cache/hf
+export XDG_CACHE_HOME=/workspace/cache/xdg
+export PADDLE_OCR_CACHE_DIR=/workspace/cache/paddle
+
+# Start backend (eager loaded models already cached)
+cd /workspace/backend && python -m uvicorn main:app --host 0.0.0.0 --port 8001 --workers 1 &
 
 # Wait for backend to start
 sleep 15
