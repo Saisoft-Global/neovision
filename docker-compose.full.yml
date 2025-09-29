@@ -11,7 +11,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U neovision"]
       interval: 10s
@@ -28,7 +28,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     ports:
-      - "${MONGODB_PORT:-27017}:27017"
+      - "27017:27017"
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -39,7 +39,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -54,14 +54,13 @@ services:
       context: .
       dockerfile: Dockerfile.full
     ports:
-      - "${BACKEND_PORT:-8001}:8000"  # Configurable host port
+      - "8001:8000"  # Host port 8001 → Container port 8000
     environment:
       - ENVIRONMENT=production
       - DATABASE_URL=postgresql://neovision:neovision123@postgres:5432/neovision
       - MONGODB_URL=mongodb://neovision:neovision123@mongodb:27017/neovision
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app/backend
-      - PORT=8000  # Internal container port
     depends_on:
       postgres:
         condition: service_healthy

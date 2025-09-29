@@ -1,34 +1,36 @@
-# Ultra-simple Dockerfile for Render
-FROM python:3.9-slim
+# Simplified Dockerfile for Ubuntu compatibility
+FROM python:3.9-slim-bullseye
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app/backend
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# Set work directory
 WORKDIR /app
 
-# Install minimal system dependencies
+# Install essential system dependencies only
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
+    libpq-dev \
     curl \
+    wget \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy and install minimal Python dependencies
-COPY backend/requirements_minimal_working.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements_minimal_working.txt
+# Copy and install Python requirements
+COPY backend/requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY backend/ ./backend/
+COPY backend/ ./
 
-# Create directories
-RUN mkdir -p backend/uploads backend/temp backend/logs
+# Create necessary directories
+RUN mkdir -p models/uploads models/temp models/logs
 
-# Simple startup
-CMD ["python", "-m", "uvicorn", "backend.main_simple:app", "--host", "0.0.0.0", "--port", "8000"]
+# Expose port
+EXPOSE 8000
+
+# Start the application
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

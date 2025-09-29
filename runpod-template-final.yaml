@@ -1,0 +1,67 @@
+name: neovision-idp-final
+image: runpod/pytorch:2.1.0-py3.10-cuda11.8.0-devel-ubuntu22.04
+container_disk_in_gb: 50
+volume_in_gb: 20
+volume_mount_path: /workspace
+ports: "8001/http,5432/tcp,27017/tcp,6379/tcp"
+env:
+  - name: PYTHONPATH
+    value: /workspace/backend
+  - name: ENVIRONMENT
+    value: production
+  - name: OCR_LANG
+    value: en,ar
+  - name: MAX_WORKERS
+    value: 2
+  - name: LOG_LEVEL
+    value: INFO
+  - name: MODEL_CACHE_DIR
+    value: /workspace/backend/models
+  - name: UPLOAD_DIR
+    value: /workspace/backend/uploads
+  - name: TEMP_DIR
+    value: /workspace/backend/temp
+  - name: DATABASE_TYPE
+    value: postgresql
+  - name: DATABASE_URL
+    value: postgresql://neovision:neovision123@localhost:5432/neovision
+  - name: MONGODB_URL
+    value: mongodb://neovision:neovision123@localhost:27017/neovision
+  - name: REDIS_URL
+    value: redis://localhost:6379
+  - name: FRONTEND_URL
+    value: https://your-runpod-url.onrender.com
+  - name: MODEL_DOWNLOAD_ON_STARTUP
+    value: "false"
+  - name: ENABLE_MODEL_TRAINING
+    value: "true"
+  - name: MAX_FILE_SIZE
+    value: "50MB"
+  - name: WORKER_TIMEOUT
+    value: "300"
+  - name: CUDA_VISIBLE_DEVICES
+    value: "0"
+  - name: PYTORCH_CUDA_ALLOC_CONF
+    value: "max_split_size_mb:512"
+startup_script: |
+  #!/bin/bash
+  echo "🚀 Starting NeoVision IDP on RunPod..."
+  
+  # Update system
+  apt-get update
+  
+  # Install Docker and Docker Compose
+  curl -fsSL https://get.docker.com -o get-docker.sh
+  sh get-docker.sh
+  curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  chmod +x /usr/local/bin/docker-compose
+  
+  # Clone repository
+  cd /workspace
+  git clone https://github.com/Saisoft-Global/neovision.git .
+  
+  # Make deployment script executable
+  chmod +x runpod-deploy.sh
+  
+  # Run deployment
+  ./runpod-deploy.sh

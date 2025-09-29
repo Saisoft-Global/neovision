@@ -1,0 +1,62 @@
+# Full IDP Dockerfile with ML dependencies
+FROM python:3.10-slim-bullseye
+
+WORKDIR /app
+
+# Install system dependencies (compatible with bullseye)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libgcc-s1 \
+    libfontconfig1 \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
+    libxrandr2 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
+    libpangocairo-1.0-0 \
+    libatk1.0-0 \
+    libcairo-gobject2 \
+    libgtk-3-0 \
+    libgdk-pixbuf-2.0-0 \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-ara \
+    libtesseract-dev \
+    libmagic1 \
+    libmagic-dev \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY backend/requirements.txt ./backend/
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Install Celery
+RUN pip install --no-cache-dir celery[redis]
+
+# Download spaCy model
+RUN python -m spacy download en_core_web_sm
+
+# Copy backend code
+COPY backend/ ./backend/
+RUN rm -rf backend/neoidp
+
+# Create necessary directories
+RUN mkdir -p backend/models/trained backend/models/layout backend/models/spacy \
+    backend/uploads backend/temp backend/logs
+
+# Expose port
+EXPOSE 8000
+
+# Start the application
+CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
