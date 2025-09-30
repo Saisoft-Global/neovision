@@ -7,7 +7,8 @@ import {
   Settings, 
   LogOut,
   Database,
-  FileText
+  FileText,
+  Bot
 } from 'lucide-react';
 
 const menuItems = [
@@ -16,6 +17,7 @@ const menuItems = [
   { icon: FileText, label: 'Templates', path: '/templates' },
   { icon: Brain, label: 'My Models', path: '/models' },
   { icon: PlusCircle, label: 'New Model', path: '/new-model' },
+  { icon: Bot, label: 'AI Assistant', path: '/ai-assistant' },
   { icon: Link2, label: 'Integrations', path: '/integrations' },
   { icon: Settings, label: 'Settings', path: '/settings' },
 ];

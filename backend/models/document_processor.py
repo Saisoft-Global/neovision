@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Dict, Any, List, Optional, Tuple
 import torch
 from PIL import Image
@@ -572,6 +573,7 @@ class DocumentProcessor:
             # Perform OCR
             logger.info("Starting OCR processing")
             logger.info(f"Image array shape: {img_array.shape}, dtype: {img_array.dtype}")
+            ocr_start_time = time.time()
             try:
                 # Support multiple OCR engines if configured; concatenate results
                 if hasattr(self, 'ocrs') and self.ocrs:
@@ -585,6 +587,8 @@ class DocumentProcessor:
                             logger.warning(f"OCR failed for one language engine: {inner_e}")
                 else:
                     ocr_result = self.ocr.ocr(img_array, cls=True)
+                ocr_time = time.time() - ocr_start_time
+                logger.info(f"PaddleOCR processing took {ocr_time:.2f} seconds")
                 logger.info(f"OCR result type: {type(ocr_result)}")
                 logger.info(f"OCR result length: {len(ocr_result) if isinstance(ocr_result, list) else 'not a list'}")
             except Exception as e:
@@ -704,25 +708,44 @@ class DocumentProcessor:
                         if avg_conf_for_donut < self.donut_threshold:
                             should_use_donut = True
 
-                    # If we can heuristically classify as handwritten early, force Donut
-                    # Simple heuristic: many small boxes and low average width
-                    if not should_use_donut and len(bounding_boxes) >= 50:
-                        should_use_donut = True
-
+                    # Smart Donut criteria - only use when really needed
                     if not should_use_donut and self.donut_force_types:
-                        # We don't know doc_type yet; if 'always' present, force; if 'unknown' present and low text length, force
-                        if 'always' in self.donut_force_types:
+                        # Check for handwritten characteristics
+                        is_likely_handwritten = False
+                        
+                        # Heuristic 1: Many small boxes (handwritten text tends to be fragmented)
+                        if len(bounding_boxes) >= 30:
+                            avg_width = sum(b['bbox'][2] - b['bbox'][0] for b in bounding_boxes) / len(bounding_boxes)
+                            avg_height = sum(b['bbox'][3] - b['bbox'][1] for b in bounding_boxes) / len(bounding_boxes)
+                            if avg_width < 50 and avg_height < 20:  # Small, fragmented text
+                                is_likely_handwritten = True
+                        
+                        # Heuristic 2: Low OCR confidence with decent text length
+                        if not is_likely_handwritten and len(extracted_text) > 50:
+                            avg_conf = sum(b['confidence'] for b in bounding_boxes) / max(1, len(bounding_boxes))
+                            if avg_conf < 0.7:  # Low confidence suggests handwriting
+                                is_likely_handwritten = True
+                        
+                        # Only force Donut for handwritten documents or if explicitly requested
+                        if 'handwritten' in self.donut_force_types and is_likely_handwritten:
                             should_use_donut = True
+                            logger.info(f"Donut triggered: handwritten characteristics detected (boxes: {len(bounding_boxes)}, avg_conf: {avg_conf:.2f})")
+                        elif 'always' in self.donut_force_types:
+                            should_use_donut = True
+                            logger.info("Donut triggered: always mode enabled")
 
                     if not should_use_donut:
                         raise Exception("Donut criteria not met; skipping")
 
                     logger.info("Applying Donut fallback")
                     # Save temp image for Donut processor if it expects a path
+                    donut_start_time = time.time()
                     with tempfile.NamedTemporaryFile(suffix='.png', delete=True) as tmp:
                         from PIL import Image as PILImage
                         PILImage.fromarray(img_array).save(tmp.name)
                         donut_result = self.donut.process_document(tmp.name) if self.donut else None
+                    donut_time = time.time() - donut_start_time
+                    logger.info(f"Donut processing took {donut_time:.2f} seconds")
                     if isinstance(donut_result, dict):
                         donut_text = donut_result.get('raw_text') or ''
                         donut_fields = donut_result.get('fields') or {}

@@ -4,10 +4,15 @@ import os
 import logging
 import tempfile
 import uuid
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import hashlib
 from collections import OrderedDict
 from fastapi import Form
+import time
+from sqlalchemy.orm import Session
+
+from config.database import get_db
+from routers.documents import save_document_to_db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -307,10 +312,13 @@ def _cache_set(hash_key: str, value: Dict[str, Any]) -> None:
 @router.post("/process-document")
 async def process_document(
     file: UploadFile = File(...),
-    processor = Depends(get_document_processor)
+    processor = Depends(get_document_processor),
+    db: Session = Depends(get_db),
+    save_to_db: bool = True
 ) -> Dict[str, Any]:
-    """Process a document using ML models - Fixed version with proper file handling"""
+    """Process a document using ML models with optional database persistence"""
     temp_path = None
+    start_time = time.time()
     try:
         logger.info(f"Processing document: {file.filename}")
         
@@ -341,13 +349,70 @@ async def process_document(
         
         # Process document using the global processor instance
         result = processor.process_document(str(temp_path))
+        
+        # Calculate processing time
+        processing_time_ms = int((time.time() - start_time) * 1000)
 
         # Add processing metadata
         result["processing_method"] = "inference_router"
         result["file_size"] = len(content)
+        result["processing_time_ms"] = processing_time_ms
 
         # Normalize response for frontend consumption (model-first)
         formatted = _format_response_for_frontend(result)
+        
+        # Save to database if requested (and if we have user context)
+        if save_to_db:
+            try:
+                # Get current user from request context (if available)
+                # For now, we'll use a default user_id - in production, this should come from auth
+                from models.active_model_manager import ActiveModelManager
+                active_model_manager = ActiveModelManager()
+                active_model_info = active_model_manager.get_active_model()
+                model_name = active_model_info.get("model_name", "unknown")
+                
+                # Get default admin user for document processing
+                from config.database import get_default_admin_user
+                admin_user = get_default_admin_user()
+                if admin_user:
+                    user_id = admin_user["user_id"]
+                    organization_id = admin_user["organization_id"]
+                else:
+                    # Fallback if admin user not found
+                    user_id = "00000000-0000-0000-0000-000000000000"
+                    organization_id = "00000000-0000-0000-0000-000000000000"
+                
+                # Save document and extraction to database
+                saved_document = save_document_to_db(
+                    db=db,
+                    user_id=user_id,
+                    organization_id=organization_id,
+                    filename=file.filename,
+                    content=content,
+                    mime_type=file.content_type or "application/octet-stream",
+                    processing_result=formatted,
+                    model_name=model_name
+                )
+                
+                # Add document ID to response
+                formatted["document_id"] = str(saved_document.id)
+                logger.info(f"Document saved to database: {saved_document.id}")
+                
+                # Add document to AI solution's knowledge base
+                await add_document_to_ai_kb(
+                    document_id=str(saved_document.id),
+                    user_id=user_id,
+                    filename=file.filename,
+                    content=content,
+                    extracted_fields=formatted.get("fields", []),
+                    processing_result=formatted
+                )
+                
+            except Exception as db_error:
+                logger.warning(f"Failed to save to database: {str(db_error)}")
+                # Don't fail the request if DB save fails
+                formatted["database_save_error"] = str(db_error)
+        
         return formatted
         
     except Exception as e:
@@ -363,6 +428,89 @@ async def process_document(
                 temp_path.unlink()
             except Exception as cleanup_error:
                 logger.error(f"Cleanup error: {str(cleanup_error)}")
+
+async def add_document_to_ai_kb(
+    document_id: str,
+    user_id: str,
+    filename: str,
+    content: bytes,
+    extracted_fields: list,
+    processing_result: dict
+):
+    """Add document to AI solution's knowledge base"""
+    try:
+        from services.ai_agent_client import AIAgentClient
+        from config.ai_config import get_ai_config
+        
+        # Check if knowledge base integration is enabled
+        config = get_ai_config()
+        if not config.enable_knowledge_base:
+            logger.info("Knowledge base integration is disabled")
+            return
+        
+        # Prepare document content for AI KB
+        document_content = content.decode('utf-8', errors='ignore')
+        
+        # Create title from filename and extracted fields
+        title = filename
+        if extracted_fields:
+            # Try to extract meaningful title from fields
+            for field in extracted_fields:
+                if field.get('label', '').lower() in ['title', 'document_title', 'subject']:
+                    title = field.get('value', filename)
+                    break
+        
+        # Prepare metadata for AI KB
+        metadata = {
+            "document_id": document_id,
+            "user_id": user_id,
+            "filename": filename,
+            "extracted_fields": extracted_fields,
+            "processing_confidence": processing_result.get("confidence", 0.0),
+            "model_used": processing_result.get("model_name", "unknown"),
+            "source": "neocaptured_idp",
+            "upload_timestamp": datetime.utcnow().isoformat()
+        }
+        
+        # Determine category based on document type or content
+        category = "general"
+        if any(keyword in filename.lower() for keyword in ['invoice', 'bill', 'receipt']):
+            category = "financial"
+        elif any(keyword in filename.lower() for keyword in ['contract', 'agreement']):
+            category = "legal"
+        elif any(keyword in filename.lower() for keyword in ['report', 'analysis']):
+            category = "reports"
+        
+        # Add tags based on extracted fields
+        tags = [category]
+        for field in extracted_fields:
+            if field.get('label'):
+                tags.append(field['label'].lower().replace(' ', '_'))
+        
+        # Add to AI solution's knowledge base
+        async with AIAgentClient() as client:
+            kb_result = await client.add_to_knowledge_base(
+                document_id=document_id,
+                title=title,
+                content=document_content,
+                category=category,
+                tags=tags[:10]  # Limit tags to 10
+            )
+            
+            logger.info(f"Document {document_id} added to AI knowledge base: {kb_result.get('knowledge_id')}")
+            
+            # Also vectorize the document for better search
+            vector_result = await client.vectorize_document(
+                document_id=document_id,
+                content=document_content,
+                metadata=metadata
+            )
+            
+            logger.info(f"Document {document_id} vectorized: {vector_result.get('vector_id')}")
+            
+    except Exception as e:
+        logger.error(f"Error adding document {document_id} to AI knowledge base: {e}", exc_info=True)
+        # Don't fail the main document processing if KB addition fails
 
 @router.get("/health")
 async def health_check():

@@ -250,15 +250,32 @@ async def process_document_with_human_review(
         # 2. Creating a human-in-the-loop session
         # 3. Returning session information
         
-        # For now, return a placeholder response
-        # In a real implementation, you'd integrate with the document processing pipeline
+        # Create a real human review session
+        session_id = str(uuid.uuid4())
+        
+        # Store session in database or cache
+        session_data = {
+            "session_id": session_id,
+            "document_id": document_id,
+            "user_id": user_id,
+            "document_type": document_type,
+            "status": "pending_review",
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        # In a real implementation, you'd save this to a database
+        # For now, we'll use a simple in-memory store
+        if not hasattr(process_document_with_human_review, 'sessions'):
+            process_document_with_human_review.sessions = {}
+        process_document_with_human_review.sessions[session_id] = session_data
         
         return {
             "success": True,
             "message": "Document processing initiated with human review",
             "document_id": document_id,
-            "session_id": str(uuid.uuid4()),  # Placeholder
-            "status": "processing"
+            "session_id": session_id,
+            "status": "pending_review",
+            "review_url": f"/human-review/{session_id}"
         }
         
     except Exception as e:

@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
 
 from models.database import get_db, Organization, User, ApiKey
 from routers.auth import get_current_user, get_current_organization
@@ -198,7 +202,13 @@ async def invite_user(
     db.commit()
     db.refresh(new_user)
     
-    # TODO: Send invitation email with password reset link
+    # Send invitation email with password reset link
+    try:
+        await send_invitation_email(new_user.email, organization.name, new_user.first_name)
+        logger.info(f"Invitation email sent to {new_user.email}")
+    except Exception as e:
+        logger.warning(f"Failed to send invitation email: {str(e)}")
+        # Don't fail the user creation if email fails
     
     return UserResponse(
         id=str(new_user.id),
@@ -389,3 +399,51 @@ async def get_organization_usage(
         "monthly_documents": monthly_documents,
         "created_at": current_org.created_at
     }
+
+async def send_invitation_email(email: str, organization_name: str, user_name: str):
+    """Send invitation email to new user"""
+    try:
+        # Get email configuration from environment
+        smtp_host = os.getenv("SMTP_HOST", "smtp.gmail.com")
+        smtp_port = int(os.getenv("SMTP_PORT", "587"))
+        smtp_username = os.getenv("SMTP_USERNAME")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+        
+        if not smtp_username or not smtp_password:
+            raise Exception("SMTP credentials not configured")
+        
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = smtp_username
+        msg['To'] = email
+        msg['Subject'] = f"Welcome to {organization_name} - NeoCaptured IDP"
+        
+        # Email body
+        body = f"""
+        Hello {user_name},
+        
+        You have been invited to join {organization_name} on NeoCaptured IDP platform.
+        
+        Your account has been created and you can now access the platform.
+        
+        To get started:
+        1. Visit the platform
+        2. Use your email: {email}
+        3. Set up your password
+        
+        Best regards,
+        The NeoCaptured Team
+        """
+        
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send email
+        server = smtplib.SMTP(smtp_host, smtp_port)
+        server.starttls()
+        server.login(smtp_username, smtp_password)
+        text = msg.as_string()
+        server.sendmail(smtp_username, email, text)
+        server.quit()
+        
+    except Exception as e:
+        raise Exception(f"Failed to send invitation email: {str(e)}")

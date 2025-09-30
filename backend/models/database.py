@@ -2,7 +2,7 @@
 Database models for production-grade IDP solution
 """
 
-from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, Text, JSON, ForeignKey, UUID, DECIMAL
+from sqlalchemy import create_engine, Column, String, Integer, DateTime, Boolean, Text, JSON, ForeignKey, UUID, DECIMAL, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.dialects.postgresql import UUID as PostgresUUID
@@ -65,13 +65,14 @@ class Document(Base):
     organization_id = Column(PostgresUUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     user_id = Column(PostgresUUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     name = Column(String(255), nullable=False)
-    file_path = Column(String(500), nullable=False)
+    original_filename = Column(String(500), nullable=False)
+    file_path = Column(String(500))  # Optional: path to stored file
     file_type = Column(String(50))
     file_size = Column(Integer)
+    mime_type = Column(String(100))
+    sha256_hash = Column(String(64), unique=True, nullable=True)  # For deduplication
+    num_pages = Column(Integer, default=1)
     status = Column(String(20), default="processing")  # processing, completed, error
-    extracted_fields = Column(JSON, default={})
-    confidence_score = Column(DECIMAL(3, 2))
-    processing_method = Column(String(50))
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -79,6 +80,54 @@ class Document(Base):
     organization = relationship("Organization", back_populates="documents")
     user = relationship("User", back_populates="documents")
     processing_jobs = relationship("ProcessingJob", back_populates="document")
+    pages = relationship("DocumentPage", back_populates="document", cascade="all, delete-orphan")
+    extractions = relationship("DocumentExtraction", back_populates="document", cascade="all, delete-orphan")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_documents_user_created', 'user_id', 'created_at'),
+        Index('idx_documents_org_created', 'organization_id', 'created_at'),
+        Index('idx_documents_hash', 'sha256_hash'),
+    )
+
+class DocumentPage(Base):
+    __tablename__ = "document_pages"
+    
+    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(PostgresUUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
+    page_index = Column(Integer, nullable=False)  # 0-based page number
+    width = Column(Integer)
+    height = Column(Integer)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("Document", back_populates="pages")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_document_pages_doc_page', 'document_id', 'page_index'),
+    )
+
+class DocumentExtraction(Base):
+    __tablename__ = "document_extractions"
+    
+    id = Column(PostgresUUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    document_id = Column(PostgresUUID(as_uuid=True), ForeignKey("documents.id"), nullable=False)
+    model_name = Column(String(100))  # Which model was used (e.g., "inv_pdf_v1", "layoutlmv3-base")
+    fields_json = Column(JSON, default={})  # Extracted fields as JSON
+    confidence = Column(DECIMAL(3, 2))  # Overall confidence score
+    pipeline_used = Column(JSON, default={})  # Which components were used (OCR, NER, etc.)
+    processing_time_ms = Column(Integer)  # Processing time in milliseconds
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    document = relationship("Document", back_populates="extractions")
+    
+    # Indexes
+    __table_args__ = (
+        Index('idx_extractions_doc_created', 'document_id', 'created_at'),
+        Index('idx_extractions_model', 'model_name'),
+    )
 
 class ProcessingJob(Base):
     __tablename__ = "processing_jobs"

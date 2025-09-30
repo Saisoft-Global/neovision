@@ -73,6 +73,96 @@ app.include_router(annotation.router, prefix="/annotation", tags=["annotation"])
 app.include_router(training.router, prefix="/training", tags=["training"])
 app.include_router(supabase_auth.router, prefix="/auth", tags=["authentication"])
 
+# Include documents router
+try:
+    from routers import documents
+    app.include_router(documents.router, prefix="/documents", tags=["documents"])
+    logger.info("Documents router loaded successfully")
+except ImportError as e:
+    logger.warning(f"Documents router not available: {str(e)}")
+
+# Include integration routers
+try:
+    from routers import email_integration
+    app.include_router(email_integration.router, prefix="/integrations/email", tags=["email-integration"])
+    logger.info("Email integration router loaded successfully")
+except ImportError as e:
+    logger.warning(f"Email integration router not available: {str(e)}")
+
+try:
+    from routers import folder_monitoring
+    app.include_router(folder_monitoring.router, prefix="/integrations/folder", tags=["folder-monitoring"])
+    logger.info("Folder monitoring router loaded successfully")
+except ImportError as e:
+    logger.warning(f"Folder monitoring router not available: {str(e)}")
+
+try:
+    from routers import webhook_system
+    app.include_router(webhook_system.router, prefix="/integrations/webhook", tags=["webhook-system"])
+    logger.info("Webhook system router loaded successfully")
+except ImportError as e:
+    logger.warning(f"Webhook system router not available: {str(e)}")
+
+try:
+    from routers import api_templates
+    app.include_router(api_templates.router, prefix="/integrations/templates", tags=["api-templates"])
+    logger.info("API templates router loaded successfully")
+except ImportError as e:
+    logger.warning(f"API templates router not available: {str(e)}")
+
+try:
+    from routers import integration_dashboard
+    app.include_router(integration_dashboard.router, prefix="/integrations/dashboard", tags=["integration-dashboard"])
+    logger.info("Integration dashboard router loaded successfully")
+except ImportError as e:
+    logger.warning(f"Integration dashboard router not available: {str(e)}")
+
+try:
+    from routers import workflow_automation
+    app.include_router(workflow_automation.router, prefix="/workflows", tags=["workflow-automation"])
+    logger.info("Workflow automation router loaded successfully")
+except ImportError as e:
+        logger.warning(f"Workflow automation router not available: {str(e)}")
+
+# Include AI integration routers
+try:
+    from routers import ai_integration
+    app.include_router(ai_integration.router, prefix="/ai", tags=["ai-integration"])
+    logger.info("AI integration router loaded successfully")
+except ImportError as e:
+    logger.warning(f"AI integration router not available: {str(e)}")
+
+try:
+    from routers import mcp_integration
+    app.include_router(mcp_integration.router, prefix="/mcp", tags=["mcp-integration"])
+    logger.info("MCP integration router loaded successfully")
+except ImportError as e:
+    logger.warning(f"MCP integration router not available: {str(e)}")
+
+# Add endpoint to get default admin user info
+@app.get("/admin/default-user")
+async def get_default_admin_user():
+    """Get default admin user information"""
+    try:
+        from config.database import get_default_admin_user
+        admin_info = get_default_admin_user()
+        if admin_info:
+            return {
+                "status": "success",
+                "user": admin_info
+            }
+        else:
+            return {
+                "status": "error",
+                "message": "Default admin user not found"
+            }
+    except Exception as e:
+        logger.error(f"Error getting default admin user: {e}", exc_info=True)
+        return {
+            "status": "error",
+            "message": f"Failed to get default admin user: {str(e)}"
+        }
+
 # Include inference router
 try:
     from routers import inference
@@ -223,6 +313,17 @@ async def health_check() -> Dict[str, Any]:
 async def startup_event():
     """Initialize application state on startup."""
     app.state.start_time = time.time()
+    
+    # Initialize database tables
+    try:
+        from backend.config.database import init_database
+        success = init_database()
+        if success:
+            logger.info("✅ Database initialized successfully")
+        else:
+            logger.warning("⚠️ Database initialization failed")
+    except Exception as e:
+        logger.error(f"❌ Database initialization error: {e}")
     
     # Try to auto-set the latest trained model as active
     try:

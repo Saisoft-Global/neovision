@@ -68,3 +68,27 @@ export const processDocumentAPI = async (file: File): Promise<ProcessDocumentRes
 
   return { fields, documentType, confidence: overallConfidence };
 };
+
+// New: list documents with pagination from backend persistence
+export const listDocuments = async (params: { limit?: number; offset?: number } = {}) => {
+  const { limit = 20, offset = 0 } = params;
+  const response = await api.get(`/documents`, { params: { limit, offset } });
+  return response.data as {
+    total: number;
+    limit: number;
+    offset: number;
+    documents: any[];
+  };
+};
+
+// New: reprocess a document
+export const reprocessDocument = async (documentId: string) => {
+  const response = await api.post(`/documents/${documentId}/reprocess`);
+  return response.data;
+};
+
+// New: delete (soft delete) a document
+export const deleteDocument = async (documentId: string) => {
+  const response = await api.delete(`/documents/${documentId}`);
+  return response.data;
+};

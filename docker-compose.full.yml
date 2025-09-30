@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
@@ -14,23 +12,6 @@ services:
       - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U neovision"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # MongoDB for document storage
-  mongodb:
-    image: mongo:7.0
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: neovision
-      MONGO_INITDB_ROOT_PASSWORD: neovision123
-      MONGO_INITDB_DATABASE: neovision
-    volumes:
-      - mongodb_data:/data/db
-    ports:
-      - "27017:27017"
-    healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -57,14 +38,20 @@ services:
       - "8001:8000"  # Host port 8001 → Container port 8000
     environment:
       - ENVIRONMENT=production
+      - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://neovision:neovision123@postgres:5432/neovision
-      - MONGODB_URL=mongodb://neovision:neovision123@mongodb:27017/neovision
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app/backend
+      - OCR_LANG=en,ar
+      - USE_TROCR=true
+      - TROCR_FALLBACK_THRESHOLD=0.65
+      - TROCR_MAX_BOXES=120
+      - TROCR_MODEL=microsoft/trocr-base-handwritten
+      - USE_DONUT=true
+      - DONUT_THRESHOLD=0.75
+      - DONUT_FORCE_TYPES=handwritten
     depends_on:
       postgres:
-        condition: service_healthy
-      mongodb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -72,11 +59,42 @@ services:
       - ./backend/uploads:/app/backend/uploads
       - ./backend/temp:/app/backend/temp
       - ./backend/logs:/app/backend/logs
+      - ./paddle_cache/.paddleocr:/root/.paddleocr:ro
+      - backend_ml_cache:/root/.cache
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
+
+  # Frontend (serves ./dist via Nginx)
+  frontend:
+    image: nginx:alpine
+    depends_on:
+      - backend
+    # Remove external port - only accessible via Caddy
+    expose:
+      - "80"
+    volumes:
+      - ./dist:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # Caddy reverse proxy with automatic HTTPS
+  caddy:
+    image: caddy:2-alpine
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    restart: unless-stopped
 
   # Celery Worker for background tasks
   celery-worker:
@@ -86,13 +104,20 @@ services:
     command: ["celery", "-A", "backend.celery_app", "worker", "--loglevel=info"]
     environment:
       - ENVIRONMENT=production
+      - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://neovision:neovision123@postgres:5432/neovision
-      - MONGODB_URL=mongodb://neovision:neovision123@mongodb:27017/neovision
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app/backend
+      - OCR_LANG=en,ar
+      - USE_TROCR=true
+      - TROCR_FALLBACK_THRESHOLD=0.65
+      - TROCR_MAX_BOXES=120
+      - TROCR_MODEL=microsoft/trocr-base-handwritten
+      - USE_DONUT=true
+      - DONUT_THRESHOLD=0.75
+      - DONUT_FORCE_TYPES=handwritten
     depends_on:
       - postgres
-      - mongodb
       - redis
       - backend
     volumes:
@@ -108,13 +133,20 @@ services:
     command: ["celery", "-A", "backend.celery_app", "beat", "--loglevel=info"]
     environment:
       - ENVIRONMENT=production
+      - DATABASE_TYPE=postgresql
       - DATABASE_URL=postgresql://neovision:neovision123@postgres:5432/neovision
-      - MONGODB_URL=mongodb://neovision:neovision123@mongodb:27017/neovision
       - REDIS_URL=redis://redis:6379
       - PYTHONPATH=/app/backend
+      - OCR_LANG=en,ar
+      - USE_TROCR=true
+      - TROCR_FALLBACK_THRESHOLD=0.65
+      - TROCR_MAX_BOXES=120
+      - TROCR_MODEL=microsoft/trocr-base-handwritten
+      - USE_DONUT=true
+      - DONUT_THRESHOLD=0.75
+      - DONUT_FORCE_TYPES=handwritten
     depends_on:
       - postgres
-      - mongodb
       - redis
       - backend
     volumes:
@@ -124,5 +156,8 @@ services:
 
 volumes:
   postgres_data:
-  mongodb_data:
   redis_data:
+  backend_ml_cache:
+  caddy_data:
+  caddy_config:
+  caddy_logs:

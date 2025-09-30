@@ -465,11 +465,12 @@ class DonutDocumentProcessor:
                 
                 # Generate text with proper parameters and error handling
                 try:
+                    # Use max_new_tokens instead of max_length to avoid input length conflicts
                     outputs = self.model.generate(
                         pixel_values,
                         decoder_input_ids=decoder_input_ids,
-                        max_length=min(128, max_decoder_length - 1),  # Ensure within bounds
-                        min_length=1,
+                        max_new_tokens=min(120, max_decoder_length - decoder_input_ids.shape[1] - 1),  # Ensure room for generation
+                        min_length=decoder_input_ids.shape[1] + 1,  # At least one new token
                         num_beams=1,
                         do_sample=False,
                         pad_token_id=self.processor.tokenizer.pad_token_id,
@@ -482,10 +483,10 @@ class DonutDocumentProcessor:
                     )
                 except IndexError as e:
                     logger.warning(f"Index error in generation, trying without decoder_input_ids: {str(e)}")
-                    # Fallback without decoder input
+                    # Fallback without decoder input - use max_new_tokens
                     outputs = self.model.generate(
                         pixel_values,
-                        max_length=128,
+                        max_new_tokens=120,
                         min_length=1,
                         num_beams=1,
                         do_sample=False,

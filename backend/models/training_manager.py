@@ -9,6 +9,8 @@ from transformers import (
     Trainer,
     TrainingArguments
 )
+import transformers as _hf
+from packaging import version
 from PIL import Image
 import json
 from pathlib import Path
@@ -160,7 +162,13 @@ class TrainingManager:
             self.training_status[model_name]["message"] = "Configuring training parameters..."
             self.training_status[model_name]["progress"] = 30
             
-            # Training arguments
+            # Training arguments (support both Transformers v4 and v5 param names)
+            _hf_ver = version.parse(_hf.__version__)
+            if _hf_ver.major >= 5:
+                eval_kw = {"eval_strategy": "no"}
+            else:
+                eval_kw = {"evaluation_strategy": "no"}
+
             training_args = TrainingArguments(
                 output_dir=str(self.model_dir / model_name),
                 num_train_epochs=num_epochs,
@@ -172,12 +180,12 @@ class TrainingManager:
                 save_total_limit=1,
                 save_safetensors=True,
                 dataloader_num_workers=0,
-                evaluation_strategy="no",
                 learning_rate=2e-5,
                 weight_decay=0.01,
                 warmup_steps=500,
                 report_to=None,  # Disable wandb/tensorboard
-                disable_tqdm=False
+                disable_tqdm=False,
+                **eval_kw
             )
             
             # Initialize trainer

@@ -3,6 +3,16 @@ FROM python:3.10-slim-bullseye
 
 WORKDIR /app
 
+# Harden pip installs for reliability in CI/Docker
+ENV PIP_DEFAULT_TIMEOUT=100 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Common ML cache locations (helps avoid permission issues and makes behavior predictable)
+ENV HF_HOME=/root/.cache/huggingface \
+    XDG_CACHE_HOME=/root/.cache/xdg \
+    PADDLE_OCR_CACHE_DIR=/root/.cache/paddle
+
 # Install system dependencies (compatible with bullseye)
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -39,7 +49,40 @@ RUN apt-get update && apt-get install -y \
 
 # Copy and install Python dependencies
 COPY backend/requirements.txt ./backend/
-RUN pip install --no-cache-dir -r backend/requirements.txt
+
+# Ensure latest pip tooling and prefer binary wheels
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# Pin Paddle to a version with reliable Linux wheels and adjust requirements accordingly
+# (Paddle 3.x wheels can be unavailable/slow on some Ubuntu runners)
+RUN sed -i 's/^paddlepaddle==.*/paddlepaddle==2.5.2/' backend/requirements.txt && \
+    sed -i 's/^paddleocr==.*/paddleocr==2.7.3/' backend/requirements.txt
+
+# Install dependencies with a bias toward prebuilt wheels
+RUN pip install --no-cache-dir --prefer-binary -r backend/requirements.txt
+
+# Pre-download PaddleOCR models at build time to avoid runtime downloads
+# This creates cache under /root/.paddleocr which runtime will reuse
+RUN python - <<'PY'
+import time
+from paddleocr import PaddleOCR
+
+langs = ["en"]  # add other langs if needed, e.g., "ar"
+for lang in langs:
+    succeeded = False
+    for attempt in range(1, 6):
+        try:
+            print(f"[PaddleOCR preload] Initializing for lang={lang}, attempt {attempt}...")
+            PaddleOCR(use_angle_cls=True, lang=lang, use_gpu=False, show_log=False)
+            print(f"[PaddleOCR preload] Success for lang={lang}")
+            succeeded = True
+            break
+        except Exception as e:
+            print(f"[PaddleOCR preload] Failed (attempt {attempt}) for {lang}: {e}")
+            time.sleep(3 * attempt)
+    if not succeeded:
+        print(f"[PaddleOCR preload] Skipping preload for {lang} (will load at runtime if cache is present)")
+PY
 
 # Install Celery
 RUN pip install --no-cache-dir celery[redis]

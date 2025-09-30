@@ -12,6 +12,7 @@ import Settings from './pages/Settings';
 import DocumentProcessor from './pages/DocumentProcessor';
 import Templates from './pages/Templates';
 import TemplateDetails from './pages/TemplateDetails';
+import AIAssistant from './pages/AIAssistant';
 
 const App: React.FC = () => {
   return (
@@ -27,6 +28,7 @@ const App: React.FC = () => {
         <Route path="templates" element={<Templates />} />
         <Route path="templates/:id" element={<TemplateDetails />} />
         <Route path="integrations" element={<Integrations />} />
+        <Route path="ai-assistant" element={<AIAssistant />} />
         <Route path="settings" element={<Settings />} />
       </Route>
     </Routes>

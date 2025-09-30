@@ -46,8 +46,15 @@ engine = create_engine(
 # Create session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Create base class for models
-Base = declarative_base()
+# Import Base from models to ensure single source of truth
+try:
+    from models.database import Base
+    print("✅ Using models.database.Base for table creation")
+except ImportError:
+    # Fallback if models not available
+    from sqlalchemy.ext.declarative import declarative_base
+    Base = declarative_base()
+    print("⚠️ Using fallback Base - models.database not available")
 
 def get_database():
     """Get database engine and session"""
@@ -111,8 +118,18 @@ if DATABASE_TYPE == "supabase":
 def init_database():
     """Initialize database with tables and basic data"""
     try:
+        # Import models to register them with Base metadata
+        try:
+            from models import database as models_db
+            print("✅ Models imported successfully")
+        except ImportError as e:
+            print(f"⚠️ Could not import models: {e}")
+        
         # Create tables
         create_tables()
+        
+        # Create default admin user
+        create_default_admin_user()
         
         # Check connection
         is_connected, message = check_database_connection()
@@ -126,6 +143,90 @@ def init_database():
     except Exception as e:
         print(f"❌ Database initialization error: {str(e)}")
         return False
+
+def create_default_admin_user():
+    """Create default admin user and organization"""
+    try:
+        from models.database import Organization, User
+        import uuid
+        from datetime import datetime
+        
+        db = SessionLocal()
+        try:
+            # Check if default admin already exists
+            existing_admin = db.query(User).filter(User.email == "admin@neocaptured.com").first()
+            if existing_admin:
+                print("✅ Default admin user already exists")
+                return
+            
+            # Create default organization
+            default_org = Organization(
+                id=uuid.uuid4(),
+                name="NeoCaptured Default Organization",
+                slug="neocaptured-default",
+                settings={"default_org": True},
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            db.add(default_org)
+            db.flush()  # Get the ID
+            
+            # Create default admin user
+            default_admin = User(
+                id=uuid.uuid4(),
+                organization_id=default_org.id,
+                email="admin@neocaptured.com",
+                full_name="System Administrator",
+                role="admin",
+                is_active=True,
+                email_verified=True,
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow()
+            )
+            db.add(default_admin)
+            
+            # Commit changes
+            db.commit()
+            
+            print(f"✅ Default admin user created:")
+            print(f"   Email: admin@neocaptured.com")
+            print(f"   User ID: {default_admin.id}")
+            print(f"   Organization ID: {default_org.id}")
+            print(f"   Role: admin")
+            
+        except Exception as e:
+            db.rollback()
+            print(f"⚠️ Error creating default admin user: {e}")
+        finally:
+            db.close()
+            
+    except Exception as e:
+        print(f"⚠️ Could not create default admin user: {e}")
+
+def get_default_admin_user():
+    """Get the default admin user ID and organization ID"""
+    try:
+        from models.database import User
+        
+        db = SessionLocal()
+        try:
+            admin_user = db.query(User).filter(User.email == "admin@neocaptured.com").first()
+            if admin_user:
+                return {
+                    "user_id": str(admin_user.id),
+                    "organization_id": str(admin_user.organization_id),
+                    "email": admin_user.email,
+                    "role": admin_user.role
+                }
+            else:
+                print("⚠️ Default admin user not found")
+                return None
+        finally:
+            db.close()
+            
+    except Exception as e:
+        print(f"⚠️ Error getting default admin user: {e}")
+        return None
 
 if __name__ == "__main__":
     # Test database connection
