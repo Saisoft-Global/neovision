@@ -1,0 +1,11 @@
+fastapi==0.110.0
+uvicorn[standard]==0.27.1
+python-multipart==0.0.9
+Pillow==10.2.0
+transformers==4.37.2
+torch==2.1.2
+numpy==1.26.3
+PyMuPDF==1.23.8
+pdf2image==1.17.0
+python-magic==0.4.27
+opencv-python==4.9.0.80

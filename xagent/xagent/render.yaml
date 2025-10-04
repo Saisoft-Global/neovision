@@ -1,0 +1,86 @@
+services:
+  # Backend API Service
+  - type: web
+    name: xagent-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: standard
+    region: oregon
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./app.db
+      - key: NEO4J_URI
+        value: bolt://xagent-neo4j:7687
+      - key: NEO4J_USER
+        value: neo4j
+      - key: NEO4J_PASSWORD
+        value: password123
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: PINECONE_API_KEY
+        sync: false
+      - key: PINECONE_ENVIRONMENT
+        sync: false
+      - key: PINECONE_INDEX_NAME
+        sync: false
+
+  # Frontend Service
+  - type: web
+    name: xagent-frontend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: ./
+    plan: starter
+    region: oregon
+    envVars:
+      - key: VITE_API_URL
+        value: https://xagent-backend.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+      - key: VITE_OPENAI_API_KEY
+        sync: false
+      - key: VITE_PINECONE_API_KEY
+        sync: false
+      - key: VITE_PINECONE_ENVIRONMENT
+        sync: false
+      - key: VITE_PINECONE_INDEX_NAME
+        sync: false
+      - key: VITE_OLLAMA_BASE_URL
+        value: https://xagent-ollama.onrender.com
+
+  # Neo4j Database
+  - type: pserv
+    name: xagent-neo4j
+    plan: starter
+    region: oregon
+    envVars:
+      - key: NEO4J_AUTH
+        value: neo4j/password123
+      - key: NEO4J_dbms_memory_pagecache_size
+        value: 512M
+      - key: NEO4J_dbms_memory_heap_initial__size
+        value: 512M
+      - key: NEO4J_dbms_memory_heap_max__size
+        value: 512M
+      - key: NEO4J_apoc_export_file_enabled
+        value: true
+      - key: NEO4J_apoc_import_file_enabled
+        value: true
+      - key: NEO4J_dbms_security_procedures_unrestricted
+        value: apoc.*
+
+  # Ollama Service (Optional - for local LLM)
+  - type: web
+    name: xagent-ollama
+    env: docker
+    dockerfilePath: ./ollama/Dockerfile
+    dockerContext: ./
+    plan: starter
+    region: oregon
+    healthCheckPath: /api/tags
+    envVars:
+      - key: OLLAMA_HOST
+        value: 0.0.0.0
