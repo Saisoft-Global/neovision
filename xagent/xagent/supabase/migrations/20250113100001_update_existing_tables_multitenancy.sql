@@ -17,97 +17,115 @@ ADD COLUMN IF NOT EXISTS team_ids jsonb DEFAULT '[]'::jsonb;
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_agents_organization_id ON public.agents(organization_id);
 CREATE INDEX IF NOT EXISTS idx_agents_visibility ON public.agents(visibility);
-CREATE INDEX IF NOT EXISTS idx_agents_user_org ON public.agents(user_id, organization_id);
+-- Create index only if user_id column exists
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'agents' AND column_name = 'user_id'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_agents_user_org ON public.agents(user_id, organization_id);
+  END IF;
+END $$;
 
--- Update RLS policies for agents
-DROP POLICY IF EXISTS "Users can view their own agents" ON public.agents;
-DROP POLICY IF EXISTS "Users can create their own agents" ON public.agents;
-DROP POLICY IF EXISTS "Users can update their own agents" ON public.agents;
-DROP POLICY IF EXISTS "Users can delete their own agents" ON public.agents;
+-- Update RLS policies for agents (only if user_id column exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'agents' AND column_name = 'user_id'
+  ) THEN
+    -- Drop existing policies
+    DROP POLICY IF EXISTS "Users can view their own agents" ON public.agents;
+    DROP POLICY IF EXISTS "Users can create their own agents" ON public.agents;
+    DROP POLICY IF EXISTS "Users can update their own agents" ON public.agents;
+    DROP POLICY IF EXISTS "Users can delete their own agents" ON public.agents;
 
--- New multi-tenant RLS policies for agents
-CREATE POLICY "Users can view accessible agents"
-  ON public.agents FOR SELECT
-  TO authenticated
-  USING (
-    -- Own private agents
-    (user_id = auth.uid() AND visibility = 'private')
-    OR
-    -- Organization agents
-    (organization_id IN (
-      SELECT organization_id 
-      FROM public.organization_members 
-      WHERE user_id = auth.uid() 
-        AND status = 'active'
-    ) AND visibility IN ('organization', 'team', 'public'))
-    OR
-    -- Explicitly shared agents
-    (auth.uid()::text = ANY(SELECT jsonb_array_elements_text(shared_with)))
-    OR
-    -- Public agents
-    (visibility = 'public')
-    OR
-    -- Admin override
-    (auth.jwt()->>'role' = 'admin')
-  );
+    -- New multi-tenant RLS policies for agents
+    CREATE POLICY "Users can view accessible agents"
+      ON public.agents FOR SELECT
+      TO authenticated
+      USING (
+        -- Own private agents
+        (user_id = auth.uid() AND visibility = 'private')
+        OR
+        -- Organization agents
+        (organization_id IN (
+          SELECT organization_id 
+          FROM public.organization_members 
+          WHERE user_id = auth.uid() 
+            AND status = 'active'
+        ) AND visibility IN ('organization', 'team', 'public'))
+        OR
+        -- Explicitly shared agents
+        (auth.uid()::text = ANY(SELECT jsonb_array_elements_text(shared_with)))
+        OR
+        -- Public agents
+        (visibility = 'public')
+        OR
+        -- Admin override
+        (auth.jwt()->>'role' = 'admin')
+      );
 
-CREATE POLICY "Users can create agents"
-  ON public.agents FOR INSERT
-  TO authenticated
-  WITH CHECK (
-    user_id = auth.uid()
-    AND (
-      organization_id IS NULL 
-      OR organization_id IN (
-        SELECT organization_id 
-        FROM public.organization_members 
-        WHERE user_id = auth.uid() 
-          AND status = 'active'
-          AND (permissions->'agents'->>'create')::boolean = true
-      )
-    )
-  );
+    CREATE POLICY "Users can create agents"
+      ON public.agents FOR INSERT
+      TO authenticated
+      WITH CHECK (
+        user_id = auth.uid()
+        AND (
+          organization_id IS NULL 
+          OR organization_id IN (
+            SELECT organization_id 
+            FROM public.organization_members 
+            WHERE user_id = auth.uid() 
+              AND status = 'active'
+              AND (permissions->'agents'->>'create')::boolean = true
+          )
+        )
+      );
 
-CREATE POLICY "Users can update their accessible agents"
-  ON public.agents FOR UPDATE
-  TO authenticated
-  USING (
-    -- Own agents
-    user_id = auth.uid()
-    OR
-    -- Org agents with permission
-    (organization_id IN (
-      SELECT organization_id 
-      FROM public.organization_members 
-      WHERE user_id = auth.uid() 
-        AND status = 'active'
-        AND (permissions->'agents'->>'update')::boolean = true
-    ))
-    OR
-    -- Admin override
-    (auth.jwt()->>'role' = 'admin')
-  );
+    CREATE POLICY "Users can update their accessible agents"
+      ON public.agents FOR UPDATE
+      TO authenticated
+      USING (
+        -- Own agents
+        user_id = auth.uid()
+        OR
+        -- Org agents with permission
+        (organization_id IN (
+          SELECT organization_id 
+          FROM public.organization_members 
+          WHERE user_id = auth.uid() 
+            AND status = 'active'
+            AND (permissions->'agents'->>'update')::boolean = true
+        ))
+        OR
+        -- Admin override
+        (auth.jwt()->>'role' = 'admin')
+      );
 
-CREATE POLICY "Users can delete their agents"
-  ON public.agents FOR DELETE
-  TO authenticated
-  USING (
-    -- Own agents
-    user_id = auth.uid()
-    OR
-    -- Org agents with permission
-    (organization_id IN (
-      SELECT organization_id 
-      FROM public.organization_members 
-      WHERE user_id = auth.uid() 
-        AND status = 'active'
-        AND role IN ('owner', 'admin')
-        AND (permissions->'agents'->>'delete')::boolean = true
-    ))
-    OR
-    -- Admin override
-    (auth.jwt()->>'role' = 'admin')
-  );
+    CREATE POLICY "Users can delete their agents"
+      ON public.agents FOR DELETE
+      TO authenticated
+      USING (
+        -- Own agents
+        user_id = auth.uid()
+        OR
+        -- Org agents with permission
+        (organization_id IN (
+          SELECT organization_id 
+          FROM public.organization_members 
+          WHERE user_id = auth.uid() 
+            AND status = 'active'
+            AND role IN ('owner', 'admin')
+            AND (permissions->'agents'->>'delete')::boolean = true
+        ))
+        OR
+        -- Admin override
+        (auth.jwt()->>'role' = 'admin')
+      );
+  END IF;
+END $$;
 
 -- Comment
 COMMENT ON COLUMN public.agents.organization_id IS 'Organization this agent belongs to (NULL for personal agents)';
@@ -444,32 +462,40 @@ COMMENT ON COLUMN public.user_llm_settings.current_organization_id IS 'Currently
 -- 10. CREATE HELPER VIEWS
 -- ============================================
 
--- View: User's accessible agents across all organizations
-CREATE OR REPLACE VIEW public.user_accessible_agents AS
-SELECT DISTINCT
-  a.*,
-  om.organization_id as user_organization_id,
-  om.role as user_role,
-  CASE 
-    WHEN a.user_id = auth.uid() THEN 'owner'
-    WHEN a.organization_id IS NOT NULL THEN 'organization'
-    WHEN auth.uid()::text = ANY(SELECT jsonb_array_elements_text(a.shared_with)) THEN 'shared'
-    ELSE 'public'
-  END as access_type
-FROM public.agents a
-LEFT JOIN public.organization_members om ON a.organization_id = om.organization_id
-WHERE 
-  -- Own agents
-  a.user_id = auth.uid()
-  OR
-  -- Organization agents
-  (a.organization_id = om.organization_id AND om.user_id = auth.uid() AND om.status = 'active')
-  OR
-  -- Shared agents
-  auth.uid()::text = ANY(SELECT jsonb_array_elements_text(a.shared_with))
-  OR
-  -- Public agents
-  a.visibility = 'public';
+-- View: User's accessible agents across all organizations (only if user_id column exists)
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'agents' AND column_name = 'user_id'
+  ) THEN
+    CREATE OR REPLACE VIEW public.user_accessible_agents AS
+    SELECT DISTINCT
+      a.*,
+      om.organization_id as user_organization_id,
+      om.role as user_role,
+      CASE 
+        WHEN a.user_id = auth.uid() THEN 'owner'
+        WHEN a.organization_id IS NOT NULL THEN 'organization'
+        WHEN auth.uid()::text = ANY(SELECT jsonb_array_elements_text(a.shared_with)) THEN 'shared'
+        ELSE 'public'
+      END as access_type
+    FROM public.agents a
+    LEFT JOIN public.organization_members om ON a.organization_id = om.organization_id
+    WHERE 
+      -- Own agents
+      a.user_id = auth.uid()
+      OR
+      -- Organization agents
+      (a.organization_id = om.organization_id AND om.user_id = auth.uid() AND om.status = 'active')
+      OR
+      -- Shared agents
+      auth.uid()::text = ANY(SELECT jsonb_array_elements_text(a.shared_with))
+      OR
+      -- Public agents
+      a.visibility = 'public';
+  END IF;
+END $$;
 
 -- View: Organization resource summary
 CREATE OR REPLACE VIEW public.organization_resource_summary AS
@@ -502,11 +528,16 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Update user's agents
-  UPDATE public.agents
-  SET organization_id = p_organization_id,
-      visibility = 'organization'
-  WHERE user_id = p_user_id AND organization_id IS NULL;
+  -- Update user's agents (only if user_id column exists)
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'agents' AND column_name = 'user_id'
+  ) THEN
+    UPDATE public.agents
+    SET organization_id = p_organization_id,
+        visibility = 'organization'
+    WHERE user_id = p_user_id AND organization_id IS NULL;
+  END IF;
 
   -- Update user's workflows
   UPDATE public.workflows
@@ -569,4 +600,5 @@ COMMENT ON VIEW public.user_accessible_agents IS 'All agents accessible to the c
 COMMENT ON VIEW public.organization_resource_summary IS 'Summary of resources and usage per organization';
 COMMENT ON FUNCTION public.migrate_user_to_organization IS 'Migrate user resources to an organization';
 COMMENT ON FUNCTION public.create_personal_organization IS 'Create a personal workspace organization for a user';
+
 
