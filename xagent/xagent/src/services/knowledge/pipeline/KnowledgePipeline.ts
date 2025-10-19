@@ -49,7 +49,7 @@ export class KnowledgePipeline {
             values: documentEmbeddings,
             metadata: {
               documentId: processedDoc.id,
-              content: processedDoc.content,
+              content: processedDoc.content.substring(0, 1000), // Truncate to avoid size limits
               title: processedDoc.title,
               ...processedDoc.metadata,
             },

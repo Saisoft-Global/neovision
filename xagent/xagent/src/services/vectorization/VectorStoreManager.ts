@@ -7,6 +7,7 @@ export class VectorStoreManager {
   private eventEmitter: EventEmitter;
   private initialized: boolean = false;
   private error: string | null = null;
+  private currentOrganizationId: string | null = null;
 
   private constructor() {
     this.eventEmitter = new EventEmitter();
@@ -19,8 +20,23 @@ export class VectorStoreManager {
     return this.instance;
   }
 
+  /**
+   * Set organization context for multi-tenancy
+   */
+  setOrganizationContext(organizationId: string | null): void {
+    this.currentOrganizationId = organizationId;
+    console.log(`🏢 VectorStoreManager organization context set: ${organizationId || 'none'}`);
+  }
+
+  /**
+   * Get current organization context
+   */
+  getOrganizationContext(): string | null {
+    return this.currentOrganizationId;
+  }
+
   async similaritySearch(
-    query: string,
+    query: string | number[],
     options: { 
       filter?: Record<string, unknown>;
       topK?: number;
@@ -33,23 +49,31 @@ export class VectorStoreManager {
         throw new Error('Vector store not available');
       }
 
+      // Build filter with organization context
+      const filter: Record<string, any> = { ...options.filter };
+      if (this.currentOrganizationId) {
+        filter.organization_id = { $eq: this.currentOrganizationId };
+        console.log(`🔒 Enforcing organization filter in vector search: ${this.currentOrganizationId}`);
+      }
+
       const results = await vectorStore.query({
-        vector: query,
+        vector: Array.isArray(query) ? query : (query as any),
         topK: options.topK || 5,
-        filter: options.filter,
+        filter: Object.keys(filter).length > 0 ? filter : undefined,
         includeMetadata: true,
       });
 
       return results.matches
-        .filter(doc => doc.score >= (options.threshold || 0.7))
-        .map(doc => ({
+        .filter((doc: any) => doc.score >= (options.threshold || 0.7))
+        .map((doc: any) => ({
           id: doc.id,
-          title: doc.metadata.title,
-          content: doc.metadata.content,
-          doc_type: doc.metadata.doc_type,
-          metadata: doc.metadata,
+          title: doc.metadata?.title || 'Untitled',
+          content: doc.metadata?.content || '',
+          doc_type: doc.metadata?.doc_type || 'unknown',
+          metadata: doc.metadata || {},
           status: 'completed',
-        }));
+          score: doc.score,
+        })) as Document[];
     } catch (error) {
       console.error('Vector search error:', error);
       throw error;
@@ -80,7 +104,7 @@ export class VectorStoreManager {
       values: document.embeddings,
       metadata: {
         documentId: document.id,
-        content: document.content,
+        content: document.content.substring(0, 1000), // Truncate to avoid size limits
         title: document.title,
         doc_type: document.doc_type,
         ...document.metadata,

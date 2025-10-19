@@ -15,7 +15,7 @@ export async function upsertDocumentChunk(chunk: DocumentChunk): Promise<void> {
         values: chunk.embeddings,
         metadata: {
           documentId: chunk.documentId,
-          content: chunk.content,
+          content: chunk.content.substring(0, 1000), // Truncate to avoid size limits
           ...chunk.metadata,
         },
       }]
