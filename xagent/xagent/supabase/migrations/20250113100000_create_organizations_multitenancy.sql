@@ -623,3 +623,4 @@ COMMENT ON COLUMN public.organizations.plan IS 'Subscription plan: trial, starte
 COMMENT ON COLUMN public.organization_members.role IS 'Member role: owner, admin, manager, member, viewer, guest';
 COMMENT ON COLUMN public.organization_members.permissions IS 'Granular permissions for this member';
 
+

@@ -184,8 +184,14 @@ export class WebCrawler {
       .replace(/Privacy Policy|Terms of Service|Cookie Policy/gi, '')
       .trim();
 
-    // Apply sanitization
-    const sanitizedContent = sanitizeContent(cleanContent);
+    // Apply sanitization with error handling
+    let sanitizedContent: string;
+    try {
+      sanitizedContent = sanitizeContent(cleanContent);
+    } catch (error) {
+      console.warn('Content sanitization failed, using raw content:', error);
+      sanitizedContent = cleanContent;
+    }
 
     // Check if content is meaningful
     if (sanitizedContent.length < this.MIN_CONTENT_LENGTH) {

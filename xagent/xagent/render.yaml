@@ -52,8 +52,11 @@ services:
         value: https://xagent-ollama.onrender.com
 
   # Neo4j Database
-  - type: pserv
+  - type: web
     name: xagent-neo4j
+    env: docker
+    dockerfilePath: ./neo4j/Dockerfile
+    dockerContext: ./
     plan: starter
     region: oregon
     envVars:
@@ -71,6 +74,10 @@ services:
         value: true
       - key: NEO4J_dbms_security_procedures_unrestricted
         value: apoc.*
+      - key: NEO4J_dbms_connector_bolt_listen__address
+        value: 0.0.0.0:7687
+      - key: NEO4J_dbms_connector_http_listen__address
+        value: 0.0.0.0:7474
 
   # Ollama Service (Optional - for local LLM)
   - type: web

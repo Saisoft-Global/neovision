@@ -17,23 +17,23 @@ ADD COLUMN IF NOT EXISTS team_ids jsonb DEFAULT '[]'::jsonb;
 -- Create index
 CREATE INDEX IF NOT EXISTS idx_agents_organization_id ON public.agents(organization_id);
 CREATE INDEX IF NOT EXISTS idx_agents_visibility ON public.agents(visibility);
--- Create index only if user_id column exists
+-- Create index for created_by + organization_id (agents table uses created_by, not user_id)
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'agents' AND column_name = 'user_id'
+    WHERE table_name = 'agents' AND column_name = 'created_by'
   ) THEN
-    CREATE INDEX IF NOT EXISTS idx_agents_user_org ON public.agents(user_id, organization_id);
+    CREATE INDEX IF NOT EXISTS idx_agents_created_by_org ON public.agents(created_by, organization_id);
   END IF;
 END $$;
 
--- Update RLS policies for agents (only if user_id column exists)
+-- Update RLS policies for agents (using created_by column)
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'agents' AND column_name = 'user_id'
+    WHERE table_name = 'agents' AND column_name = 'created_by'
   ) THEN
     -- Drop existing policies
     DROP POLICY IF EXISTS "Users can view their own agents" ON public.agents;
@@ -47,7 +47,7 @@ BEGIN
       TO authenticated
       USING (
         -- Own private agents
-        (user_id = auth.uid() AND visibility = 'private')
+        (created_by = auth.uid() AND visibility = 'private')
         OR
         -- Organization agents
         (organization_id IN (
@@ -71,7 +71,7 @@ BEGIN
       ON public.agents FOR INSERT
       TO authenticated
       WITH CHECK (
-        user_id = auth.uid()
+        created_by = auth.uid()
         AND (
           organization_id IS NULL 
           OR organization_id IN (
@@ -89,7 +89,7 @@ BEGIN
       TO authenticated
       USING (
         -- Own agents
-        user_id = auth.uid()
+        created_by = auth.uid()
         OR
         -- Org agents with permission
         (organization_id IN (
@@ -109,7 +109,7 @@ BEGIN
       TO authenticated
       USING (
         -- Own agents
-        user_id = auth.uid()
+        created_by = auth.uid()
         OR
         -- Org agents with permission
         (organization_id IN (
@@ -136,22 +136,32 @@ COMMENT ON COLUMN public.agents.shared_with IS 'Array of user IDs this agent is 
 -- 2. UPDATE WORKFLOWS TABLE
 -- ============================================
 
+-- Add organization columns to workflows table
 DO $$ 
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'workflows') THEN
-    -- Add organization columns
     ALTER TABLE public.workflows 
     ADD COLUMN IF NOT EXISTS organization_id uuid REFERENCES public.organizations(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS visibility text DEFAULT 'organization' CHECK (visibility IN ('private', 'organization', 'team', 'public')),
     ADD COLUMN IF NOT EXISTS shared_with jsonb DEFAULT '[]'::jsonb,
     ADD COLUMN IF NOT EXISTS created_by uuid REFERENCES auth.users(id);
+  END IF;
+END $$;
 
-    -- Create index
+-- Create indexes for workflows table
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'workflows') THEN
     CREATE INDEX IF NOT EXISTS idx_workflows_organization_id ON public.workflows(organization_id);
     CREATE INDEX IF NOT EXISTS idx_workflows_visibility ON public.workflows(visibility);
     CREATE INDEX IF NOT EXISTS idx_workflows_created_by ON public.workflows(created_by);
+  END IF;
+END $$;
 
-    -- Update RLS policies
+-- Update RLS policies for workflows table
+DO $$ 
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'workflows') THEN
     DROP POLICY IF EXISTS "Users can view workflows" ON public.workflows;
     DROP POLICY IF EXISTS "Users can create workflows" ON public.workflows;
     DROP POLICY IF EXISTS "Users can update workflows" ON public.workflows;
@@ -462,12 +472,12 @@ COMMENT ON COLUMN public.user_llm_settings.current_organization_id IS 'Currently
 -- 10. CREATE HELPER VIEWS
 -- ============================================
 
--- View: User's accessible agents across all organizations (only if user_id column exists)
+-- View: User's accessible agents across all organizations (using created_by column)
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'agents' AND column_name = 'user_id'
+    WHERE table_name = 'agents' AND column_name = 'created_by'
   ) THEN
     CREATE OR REPLACE VIEW public.user_accessible_agents AS
     SELECT DISTINCT
@@ -475,7 +485,7 @@ BEGIN
       om.organization_id as user_organization_id,
       om.role as user_role,
       CASE 
-        WHEN a.user_id = auth.uid() THEN 'owner'
+        WHEN a.created_by = auth.uid() THEN 'owner'
         WHEN a.organization_id IS NOT NULL THEN 'organization'
         WHEN auth.uid()::text = ANY(SELECT jsonb_array_elements_text(a.shared_with)) THEN 'shared'
         ELSE 'public'
@@ -484,7 +494,7 @@ BEGIN
     LEFT JOIN public.organization_members om ON a.organization_id = om.organization_id
     WHERE 
       -- Own agents
-      a.user_id = auth.uid()
+      a.created_by = auth.uid()
       OR
       -- Organization agents
       (a.organization_id = om.organization_id AND om.user_id = auth.uid() AND om.status = 'active')
@@ -528,15 +538,15 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 BEGIN
-  -- Update user's agents (only if user_id column exists)
+  -- Update user's agents (using created_by column)
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'agents' AND column_name = 'user_id'
+    WHERE table_name = 'agents' AND column_name = 'created_by'
   ) THEN
     UPDATE public.agents
     SET organization_id = p_organization_id,
         visibility = 'organization'
-    WHERE user_id = p_user_id AND organization_id IS NULL;
+    WHERE created_by = p_user_id AND organization_id IS NULL;
   END IF;
 
   -- Update user's workflows

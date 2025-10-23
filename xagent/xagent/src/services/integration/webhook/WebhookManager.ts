@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../../config/supabase';
 import { EventEmitter } from 'events';
 
 export class WebhookManager {
@@ -8,10 +8,7 @@ export class WebhookManager {
   private handlers: Map<string, Set<(payload: unknown) => Promise<void>>>;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.eventEmitter = new EventEmitter();
     this.handlers = new Map();
     this.initializeWebhookListener();

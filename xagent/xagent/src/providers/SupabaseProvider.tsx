@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { supabaseInitializer } from '../config/supabase/initialization';
+import { isSupabaseConnected } from '../config/supabase';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { Alert } from '../components/common/Alert';
 
@@ -14,35 +14,37 @@ export const SupabaseProvider: React.FC<SupabaseProviderProps> = ({ children }) 
   useEffect(() => {
     const initialize = async () => {
       try {
-        await supabaseInitializer.initialize();
-        setIsInitialized(true);
+        console.log('🔗 Connecting to Supabase...');
+        const isConnected = await isSupabaseConnected();
+        
+        if (isConnected) {
+          console.log('✅ Supabase connected successfully');
+          setIsInitialized(true);
+        } else {
+          throw new Error('Failed to connect to Supabase database');
+        }
       } catch (err) {
+        console.error('❌ Supabase initialization failed:', err);
         setError(err instanceof Error ? err.message : 'Failed to initialize database');
       }
     };
 
-    supabaseInitializer.onInitialized(() => {
-      setIsInitialized(true);
-    });
-
-    supabaseInitializer.onError((error) => {
-      setError(error.message);
-    });
-
-    initialize();
+    // Add a small delay to allow other services to initialize
+    const timer = setTimeout(initialize, 100);
+    return () => clearTimeout(timer);
   }, []);
 
   if (error) {
     return (
       <Alert
         type="error"
-        message={`Database connection failed: ${error}`}
+        message={`Database connection failed: ${error}. Please check your Supabase configuration.`}
       />
     );
   }
 
   if (!isInitialized) {
-    return <LoadingSpinner message="Connecting to database..." />;
+    return <LoadingSpinner message="Connecting to Supabase database..." />;
   }
 
   return <>{children}</>;

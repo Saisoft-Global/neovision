@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../../config/supabase';
 import type { KnowledgeNode, KnowledgeRelation } from '../../../types/knowledge';
 
 export class KnowledgeVersionManager {
@@ -6,10 +6,7 @@ export class KnowledgeVersionManager {
   private supabase;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
   }
 
   public static getInstance(): KnowledgeVersionManager {

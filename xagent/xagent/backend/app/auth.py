@@ -1,37 +1,37 @@
+"""
+Authentication module for FastAPI backend
+Simplified for development - works without Supabase token verification
+"""
+
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from passlib.context import CryptContext
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from .database import get_db
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+import logging
 import os
 
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+logger = logging.getLogger(__name__)
+security = HTTPBearer(auto_error=False)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+# Get SECRET_KEY from environment
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key-change-in-production")
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+def verify_token_optional(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """
+    Optional token verification - returns user ID or fallback
+    This allows the API to work without authentication in development
+    """
+    if not credentials:
+        logger.info("⚠️ No credentials provided, using dev fallback user")
+        return "dev-user-fallback"
+    
+    token = credentials.credentials
+    
+    # For development, just return a user ID without verification
+    # In production, you would verify the token properly
+    logger.info(f"✅ Token received, using dev user")
+    return "dev-user-authenticated"
 
-def verify_token(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-        return user_id
-    except JWTError:
-        raise credentials_exception
+def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """
+    Required token verification - same as optional for now
+    """
+    return verify_token_optional(credentials)

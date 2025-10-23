@@ -8,6 +8,7 @@ export const ProviderSelector: React.FC = () => {
 
   const providers: { value: LLMProvider; label: string }[] = [
     { value: 'openai', label: 'OpenAI' },
+    { value: 'groq', label: 'Groq' },
     { value: 'ollama', label: 'Ollama' },
   ];
 

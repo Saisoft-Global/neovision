@@ -1,5 +1,4 @@
-# Build stage
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -7,12 +6,22 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci
+RUN npm install
 
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with environment variables
+ARG VITE_API_URL
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_OPENAI_API_KEY
+ARG VITE_OPENAI_ORG_ID
+ARG VITE_PINECONE_API_KEY
+ARG VITE_PINECONE_ENVIRONMENT
+ARG VITE_PINECONE_INDEX_NAME
+ARG VITE_GROQ_API_KEY
+
 RUN npm run build
 
 # Production stage

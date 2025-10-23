@@ -1,0 +1,376 @@
+{
+  "customer_onboarding_system": {
+    "description": "Complete customer onboarding system matching the sophisticated financial institution workflow",
+    "agents": {
+      "ai_ocr_agent": {
+        "name": "AI OCR Agent",
+        "type": "document_processing",
+        "description": "Ensemble OCR processing with multiple providers",
+        "config": {
+          "personality": {
+            "friendliness": 0.7,
+            "formality": 0.9,
+            "proactiveness": 0.8,
+            "detail_orientation": 1.0
+          },
+          "skills": [
+            {
+              "name": "document_processing",
+              "level": 5,
+              "description": "Advanced document analysis and processing",
+              "preferred_llm": {
+                "provider": "mistral",
+                "model": "mistral-large-latest",
+                "reason": "Best for document analysis and validation"
+              },
+              "capabilities": [
+                {
+                  "id": "ensemble_ocr",
+                  "name": "Ensemble OCR Processing",
+                  "description": "Uses multiple OCR engines for maximum accuracy",
+                  "requiredTools": ["tesseract_tool", "azure_ocr", "google_vision"],
+                  "executionStrategy": "hybrid",
+                  "metadata": {
+                    "engines": ["tesseract", "azure", "google_vision"],
+                    "confidence_threshold": 0.85,
+                    "ensemble_voting": true
+                  }
+                }
+              ]
+            },
+            {
+              "name": "document_validation",
+              "level": 5,
+              "description": "Validates document completeness and accuracy",
+              "preferred_llm": {
+                "provider": "anthropic",
+                "model": "claude-3-opus-20240229",
+                "reason": "Excellent for document validation and compliance"
+              }
+            }
+          ],
+          "llm_config": {
+            "provider": "mistral",
+            "model": "mistral-large-latest",
+            "temperature": 0.1,
+            "maxTokens": 4000
+          },
+          "llm_overrides": {
+            "document_analysis": {
+              "provider": "mistral",
+              "model": "mistral-large-latest"
+            },
+            "visual_processing": {
+              "provider": "google",
+              "model": "gemini-1.5-pro"
+            },
+            "compliance_checking": {
+              "provider": "anthropic",
+              "model": "claude-3-opus-20240229"
+            }
+          },
+          "fallback_llm": {
+            "provider": "openai",
+            "model": "gpt-4-turbo"
+          },
+          "workflows": ["customer_onboarding_ocr"],
+          "system_prompt": {
+            "role": "AI OCR Specialist",
+            "goal": "Process customer applications with maximum accuracy using ensemble OCR",
+            "instructions": "Use multiple OCR engines, validate results, ensure document completeness, flag any issues for human review"
+          }
+        }
+      },
+      
+      "background_check_agent": {
+        "name": "Background Check Agent",
+        "type": "verification",
+        "description": "Comprehensive background and credit verification",
+        "config": {
+          "personality": {
+            "friendliness": 0.5,
+            "formality": 1.0,
+            "proactiveness": 0.9,
+            "detail_orientation": 1.0
+          },
+          "skills": [
+            {
+              "name": "data_integration",
+              "level": 5,
+              "description": "Integrates with multiple external databases",
+              "preferred_llm": {
+                "provider": "mistral",
+                "model": "mistral-large-latest",
+                "reason": "Best for data analysis and pattern recognition"
+              },
+              "capabilities": [
+                {
+                  "id": "multi_system_search",
+                  "name": "Multi-System API Search",
+                  "description": "Searches across court, AML, fraud, and criminal databases",
+                  "requiredTools": ["court_api", "aml_api", "fraud_api", "criminal_api"],
+                  "executionStrategy": "direct"
+                }
+              ]
+            },
+            {
+              "name": "compliance_checking",
+              "level": 5,
+              "description": "Regulatory compliance and risk assessment",
+              "preferred_llm": {
+                "provider": "anthropic",
+                "model": "claude-3-opus-20240229",
+                "reason": "Excellent for regulatory compliance analysis"
+              }
+            },
+            {
+              "name": "risk_assessment",
+              "level": 5,
+              "description": "Evaluates customer risk profile",
+              "preferred_llm": {
+                "provider": "mistral",
+                "model": "mistral-large-latest",
+                "reason": "Best for risk analysis and decision making"
+              }
+            }
+          ],
+          "llm_config": {
+            "provider": "mistral",
+            "model": "mistral-large-latest",
+            "temperature": 0.1,
+            "maxTokens": 4000
+          },
+          "llm_overrides": {
+            "data_analysis": {
+              "provider": "mistral",
+              "model": "mistral-large-latest"
+            },
+            "compliance_analysis": {
+              "provider": "anthropic",
+              "model": "claude-3-opus-20240229"
+            }
+          },
+          "workflows": ["background_verification"],
+          "system_prompt": {
+            "role": "Background Verification Specialist",
+            "goal": "Comprehensive background and credit verification",
+            "instructions": "Search all relevant databases, analyze results, make risk-based decisions, ensure compliance"
+          }
+        }
+      },
+      
+      "account_opening_agent": {
+        "name": "Account Opening Agent",
+        "type": "automation",
+        "description": "Automated account setup and documentation",
+        "config": {
+          "personality": {
+            "friendliness": 0.8,
+            "formality": 0.8,
+            "proactiveness": 0.9,
+            "detail_orientation": 0.9
+          },
+          "skills": [
+            {
+              "name": "account_setup",
+              "level": 5,
+              "description": "Complete account opening procedures",
+              "preferred_llm": {
+                "provider": "openai",
+                "model": "gpt-4-turbo",
+                "reason": "Best for complex procedural tasks"
+              },
+              "capabilities": [
+                {
+                  "id": "document_generation",
+                  "name": "Document Generation",
+                  "description": "Creates account opening documents and instructions",
+                  "requiredTools": ["document_tool", "template_engine"],
+                  "executionStrategy": "direct"
+                },
+                {
+                  "id": "compliance_checklist",
+                  "name": "Compliance Checklist",
+                  "description": "Ensures all compliance requirements are met",
+                  "requiredTools": ["compliance_tool"],
+                  "executionStrategy": "direct"
+                }
+              ]
+            },
+            {
+              "name": "document_management",
+              "level": 4,
+              "description": "Manages account opening documents",
+              "preferred_llm": {
+                "provider": "anthropic",
+                "model": "claude-3-sonnet-20240229",
+                "reason": "Good for document creation and formatting"
+              }
+            }
+          ],
+          "llm_config": {
+            "provider": "openai",
+            "model": "gpt-4-turbo",
+            "temperature": 0.2,
+            "maxTokens": 4000
+          },
+          "workflows": ["account_opening_automation"],
+          "system_prompt": {
+            "role": "Account Opening Specialist",
+            "goal": "Efficiently open customer accounts with complete documentation",
+            "instructions": "Create instructions, scan documents, fill checklists, prepare final documents"
+          }
+        }
+      },
+      
+      "notification_agent": {
+        "name": "Notification Agent",
+        "type": "communication",
+        "description": "Multi-channel customer communication",
+        "config": {
+          "personality": {
+            "friendliness": 0.9,
+            "formality": 0.7,
+            "proactiveness": 0.8,
+            "detail_orientation": 0.8
+          },
+          "skills": [
+            {
+              "name": "multi_channel_communication",
+              "level": 5,
+              "description": "Communicates via email, phone, and mail",
+              "preferred_llm": {
+                "provider": "anthropic",
+                "model": "claude-3-haiku-20240307",
+                "reason": "Fast and good for communication tasks"
+              },
+              "capabilities": [
+                {
+                  "id": "email_notifications",
+                  "name": "Email Notifications",
+                  "description": "Sends automated email notifications",
+                  "requiredTools": ["email_tool"],
+                  "executionStrategy": "direct"
+                },
+                {
+                  "id": "phone_notifications",
+                  "name": "Phone Notifications",
+                  "description": "Handles phone-based communications",
+                  "requiredTools": ["phone_tool"],
+                  "executionStrategy": "direct"
+                }
+              ]
+            }
+          ],
+          "llm_config": {
+            "provider": "anthropic",
+            "model": "claude-3-haiku-20240307",
+            "temperature": 0.3,
+            "maxTokens": 2000
+          },
+          "system_prompt": {
+            "role": "Customer Communication Specialist",
+            "goal": "Provide clear, timely communication to customers",
+            "instructions": "Send appropriate notifications based on workflow status, use professional tone, ensure clarity"
+          }
+        }
+      }
+    },
+    
+    "workflows": {
+      "complete_onboarding_flow": {
+        "description": "End-to-end customer onboarding process",
+        "stages": [
+          {
+            "stage": "Document Processing",
+            "agent": "ai_ocr_agent",
+            "workflow": "customer_onboarding_ocr",
+            "description": "OCR processing and document validation"
+          },
+          {
+            "stage": "Background Verification",
+            "agent": "background_check_agent", 
+            "workflow": "background_verification",
+            "description": "Comprehensive background and credit checks"
+          },
+          {
+            "stage": "Account Opening",
+            "agent": "account_opening_agent",
+            "workflow": "account_opening_automation",
+            "description": "Automated account setup and documentation"
+          },
+          {
+            "stage": "Customer Communication",
+            "agent": "notification_agent",
+            "description": "Multi-channel customer notifications"
+          }
+        ]
+      }
+    },
+    
+    "integration_points": {
+      "external_apis": [
+        {
+          "name": "Court Order Database",
+          "type": "court_system",
+          "endpoint": "https://api.courtsystem.gov",
+          "capabilities": ["mareva_injunction_search", "court_order_lookup"]
+        },
+        {
+          "name": "AML Database",
+          "type": "aml_system", 
+          "endpoint": "https://api.aml-provider.com",
+          "capabilities": ["aml_screening", "sanctions_check"]
+        },
+        {
+          "name": "Fraud Detection System",
+          "type": "fraud_system",
+          "endpoint": "https://api.fraud-detection.com",
+          "capabilities": ["fraud_risk_assessment", "identity_verification"]
+        },
+        {
+          "name": "Criminal Records Database",
+          "type": "criminal_db",
+          "endpoint": "https://api.criminal-db.gov",
+          "capabilities": ["criminal_background_check", "record_retrieval"]
+        }
+      ],
+      "notification_channels": [
+        {
+          "type": "email",
+          "provider": "smtp",
+          "templates": ["missing_document", "account_flagged", "account_approved"]
+        },
+        {
+          "type": "phone",
+          "provider": "twilio",
+          "capabilities": ["voice_call", "sms"]
+        },
+        {
+          "type": "mail",
+          "provider": "postal_service",
+          "capabilities": ["physical_mail_delivery"]
+        }
+      ]
+    },
+    
+    "success_metrics": {
+      "processing_time": {
+        "ocr_processing": "< 5 minutes",
+        "background_check": "< 24 hours",
+        "account_opening": "< 2 hours",
+        "total_process": "< 48 hours"
+      },
+      "accuracy": {
+        "ocr_accuracy": "> 99%",
+        "background_check_accuracy": "> 99.5%",
+        "false_positive_rate": "< 0.1%"
+      },
+      "compliance": {
+        "regulatory_compliance": "100%",
+        "audit_trail": "Complete",
+        "data_security": "Enterprise-grade"
+      }
+    }
+  }
+}

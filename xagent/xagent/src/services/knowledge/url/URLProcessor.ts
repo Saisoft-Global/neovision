@@ -88,14 +88,23 @@ export class URLProcessor {
       const response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'Accept': 'text/html,application/json,text/plain',
-          'User-Agent': 'Mozilla/5.0 (compatible; KnowledgeBot/1.0)',
+          'Accept': 'text/html,application/json,text/plain,text/xml',
+          'User-Agent': 'Mozilla/5.0 (compatible; KnowledgeBot/1.0; +https://github.com/knowledgebot)',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept-Encoding': 'gzip, deflate',
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache',
         },
         mode: 'cors',
         credentials: 'omit',
         redirect: 'follow',
       });
       return response;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${this.TIMEOUT}ms`);
+      }
+      throw error;
     } finally {
       clearTimeout(timeoutId);
     }

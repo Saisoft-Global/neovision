@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PineconeClient } from '../services/pinecone/PineconeClient';
+import { vectorService } from '../services/vector/VectorService';
 import { isServiceConfigured } from '../config/environment';
 
 export function useVectorStore() {
@@ -23,12 +23,12 @@ export function useVectorStore() {
         setIsLoading(true);
         setError(null);
 
-        await PineconeClient.getInstance();
-        await PineconeClient.getIndex();
-
+        // Test vector service by checking status
+        const status = await vectorService.getStatus();
+        
         if (mounted) {
-          setIsInitialized(true);
-          setError(null);
+          setIsInitialized(status.available);
+          setError(status.available ? null : 'Vector service not available');
         }
       } catch (err) {
         if (mounted) {

@@ -3,7 +3,7 @@
  * Manages organization CRUD operations, settings, and configuration
  */
 
-import { getSupabaseClient } from '../../lib/supabase';
+import { getSupabaseClient } from '../../config/supabase/client';
 
 export interface Organization {
   id: string;
@@ -435,4 +435,5 @@ export class OrganizationService {
 }
 
 export const organizationService = OrganizationService.getInstance();
+
 

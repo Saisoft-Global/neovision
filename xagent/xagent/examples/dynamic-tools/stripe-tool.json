@@ -1,0 +1,113 @@
+{
+  "id": "stripe-integration",
+  "name": "Stripe Payment Tool",
+  "description": "Integration with Stripe for payments, invoices, and customers",
+  "category": "integration",
+  "provider": "stripe",
+  "version": "1.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "bearer",
+    "credentials": {
+      "api_key": "{{VITE_STRIPE_API_KEY}}",
+      "base_url": "https://api.stripe.com/v1"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "create_customer",
+      "name": "create_customer",
+      "description": "Create a new customer in Stripe",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/customers",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "body": {
+          "type": "form",
+          "template": "{\"email\": \"{{email}}\", \"name\": \"{{name}}\", \"description\": \"{{description}}\"}"
+        }
+      },
+      "parameters": {
+        "email": {
+          "type": "string",
+          "required": true,
+          "description": "Customer email address"
+        },
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Customer name"
+        },
+        "description": {
+          "type": "string",
+          "required": false,
+          "description": "Customer description"
+        }
+      },
+      "response": {
+        "extractPath": null,
+        "transform": {
+          "customer_id": "id",
+          "customer_email": "email",
+          "created": "created"
+        },
+        "successMessage": "Customer {{response.name}} created successfully with ID: {{response.id}}"
+      }
+    },
+    {
+      "id": "create_invoice",
+      "name": "create_invoice",
+      "description": "Create an invoice in Stripe",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/invoices",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"customer\": \"{{customer_id}}\", \"auto_advance\": true}"
+        }
+      },
+      "parameters": {
+        "customer_id": {
+          "type": "string",
+          "required": true,
+          "description": "Stripe customer ID"
+        }
+      },
+      "response": {
+        "successMessage": "Invoice {{response.number}} created for ${{response.amount_due}}"
+      }
+    },
+    {
+      "id": "get_customer",
+      "name": "get_customer",
+      "description": "Retrieve customer information from Stripe",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/customers/{{customer_id}}",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        }
+      },
+      "parameters": {
+        "customer_id": {
+          "type": "string",
+          "required": true,
+          "description": "Stripe customer ID"
+        }
+      },
+      "response": {
+        "successMessage": "Retrieved customer: {{response.name}}"
+      }
+    }
+  ]
+}
+
+

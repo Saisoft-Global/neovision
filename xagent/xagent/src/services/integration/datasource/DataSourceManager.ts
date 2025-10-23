@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../../config/supabase';
 import { SQLConnector } from './connectors/SQLConnector';
 import { NoSQLConnector } from './connectors/NoSQLConnector';
 import { CloudConnector } from './connectors/CloudConnector';
@@ -10,10 +10,7 @@ export class DataSourceManager {
   private connectors: Map<DataSourceType, any>;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.connectors = new Map();
     this.initializeConnectors();
   }

@@ -1,0 +1,165 @@
+version: '3.8'
+
+services:
+  # Backend API
+  backend:
+    build: ./backend
+    container_name: multi-agent-backend
+    ports:
+      - "8002:8000"  # Custom port to avoid conflicts
+    environment:
+      - DATABASE_URL=sqlite:///./app.db
+      - NEO4J_URI=${NEO4J_URI:-bolt://neo4j:7687}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:-}
+      - PINECONE_ENVIRONMENT=${PINECONE_ENVIRONMENT:-}
+      - PINECONE_INDEX_NAME=${PINECONE_INDEX_NAME:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - SECRET_KEY=${SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:5173}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - neo4j
+      - redis
+    networks:
+      - agent_network
+    volumes:
+      - ./data/backend:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Application (internal only - served by Caddy)
+  app:
+    build:
+      context: .
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_OPENAI_API_KEY: ${VITE_OPENAI_API_KEY}
+        VITE_OPENAI_ORG_ID: ${VITE_OPENAI_ORG_ID}
+        VITE_PINECONE_API_KEY: ${VITE_PINECONE_API_KEY}
+        VITE_PINECONE_ENVIRONMENT: ${VITE_PINECONE_ENVIRONMENT}
+        VITE_PINECONE_INDEX_NAME: ${VITE_PINECONE_INDEX_NAME}
+        VITE_GROQ_API_KEY: ${VITE_GROQ_API_KEY}
+    container_name: multi-agent-app
+    # Remove external port - only accessible via Caddy
+    env_file:
+      - .env
+    depends_on:
+      - backend
+      - neo4j
+      - ollama
+    networks:
+      - agent_network
+
+  # Caddy Reverse Proxy (internal only - Cloudflare Tunnel handles external access)
+  caddy:
+    image: caddy:2-alpine
+    container_name: multi-agent-caddy
+    ports:
+      - "8086:8086"  # Internal port for Cloudflare Tunnel
+      - "8081:8081"  # Health check port
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+      - caddy_logs:/var/log/caddy
+    depends_on:
+      - app
+      - backend
+    networks:
+      - agent_network
+    restart: unless-stopped
+
+  # Neo4j Database
+  neo4j:
+    image: neo4j:5.15
+    container_name: multi-agent-neo4j
+    ports:
+      - "7475:7474"  # Custom port to avoid conflicts (HTTP)
+      - "7688:7687"  # Custom port to avoid conflicts (Bolt)
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=1G
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+      - ./backups:/backups
+    networks:
+      - agent_network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: multi-agent-redis
+    ports:
+      - "6380:6379"  # Custom port to avoid conflicts
+    command: redis-server --requirepass ${REDIS_PASSWORD:-changeme}
+    volumes:
+      - redis_data:/data
+    networks:
+      - agent_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Ollama for Local LLM
+  ollama:
+    image: ollama/ollama:latest
+    container_name: multi-agent-ollama
+    ports:
+      - "11435:11434"  # Custom port to avoid conflicts
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - agent_network
+    environment:
+      - OLLAMA_HOST=0.0.0.0
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
+  ollama_data:
+  caddy_data:
+  caddy_config:
+  caddy_logs:
+  redis_data:
+
+networks:
+  agent_network:
+    driver: bridge

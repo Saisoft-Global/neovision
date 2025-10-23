@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../config/supabase';
 
 export class SharedContext {
   private static instance: SharedContext;
@@ -6,10 +6,7 @@ export class SharedContext {
   private cache: Map<string, any>;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.cache = new Map();
   }
 

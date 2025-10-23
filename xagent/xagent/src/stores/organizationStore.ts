@@ -9,6 +9,8 @@ import { organizationService, type Organization } from '../services/organization
 import { membershipService, type OrganizationMember, type MemberRole } from '../services/organization/MembershipService';
 import { llmConfigManager } from '../services/llm/LLMConfigManager';
 import { AgentFactory } from '../services/agent/AgentFactory';
+import { MemoryService } from '../services/memory/MemoryService';
+import { vectorService } from '../services/vector/VectorService';
 
 interface OrganizationState {
   // Current State
@@ -124,6 +126,13 @@ export const useOrganizationStore = create<OrganizationState>()(
             userId,
             visibility: 'organization'
           });
+
+          // Update Memory Service context
+          const memoryService = MemoryService.getInstance();
+          memoryService.setOrganizationContext(organizationId);
+
+          // Update Vector Service context
+          vectorService.setOrganizationContext(organizationId);
 
           console.log('✅ Organization context set successfully');
         } catch (error) {
@@ -312,6 +321,13 @@ export const useOrganizationStore = create<OrganizationState>()(
         const agentFactory = AgentFactory.getInstance();
         agentFactory.clearOrganizationContext();
         
+        // Clear Memory Service context
+        const memoryService = MemoryService.getInstance();
+        memoryService.setOrganizationContext(null);
+        
+        // Clear Vector Service context
+        vectorService.setOrganizationContext(null);
+        
         console.log('🔄 Organization context cleared');
       },
 
@@ -339,4 +355,5 @@ export const useOrganizationStore = create<OrganizationState>()(
     }
   )
 );
+
 

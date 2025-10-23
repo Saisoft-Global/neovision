@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../../config/supabase';
 import type { Workflow } from '../../../types/workflow';
 
 export class WorkflowVersionManager {
   private supabase;
 
   constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
   }
 
   async createVersion(workflow: Workflow): Promise<string> {

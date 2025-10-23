@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-import { pineconeClient, getVectorStore, getPineconeError, resetPinecone } from '../../services/pinecone/client';
+import { getVectorStore } from '../../services/pinecone/client';
 
 export const PineconeTest: React.FC = () => {
   const [status, setStatus] = useState<{
@@ -17,24 +17,27 @@ export const PineconeTest: React.FC = () => {
 
   const testConnection = async () => {
     setIsLoading(true);
-    resetPinecone(); // Reset any previous connection state
     
     try {
-      // Test client connection
-      const client = await pineconeClient.getInstance();
-      const clientConnected = client !== null;
+      // Test vector store connection
+      const vectorStore = await getVectorStore();
+      const clientConnected = vectorStore !== null && vectorStore.isPineconeAvailable();
       
-      // Test index connection
-      const index = await getVectorStore();
+      // Test index stats
       let indexConnected = false;
       let indexStats;
+      let error: string | null = null;
       
-      if (index) {
-        indexStats = await index.describeIndexStats();
-        indexConnected = true;
+      if (vectorStore && clientConnected) {
+        try {
+          indexStats = await vectorStore.describeIndexStats();
+          indexConnected = true;
+        } catch (err) {
+          error = err instanceof Error ? err.message : 'Failed to get index stats';
+        }
+      } else {
+        error = 'Pinecone not configured or available';
       }
-
-      const error = getPineconeError();
       
       setStatus({
         client: clientConnected,

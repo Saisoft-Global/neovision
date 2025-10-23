@@ -1,39 +1,28 @@
-import { LLMProviderManager } from '../llm/providers/LLMProviderManager';
-import { getDomainPrompt } from './prompts/domainPrompts';
-import { getAgentContext } from './context/agentContext';
 import type { Agent } from '../../types/agent';
-import type { ChatMessage } from '../llm/types';
 import { Logger } from '../../utils/logging/Logger';
 import { ErrorHandler } from '../../utils/errors/ErrorHandler';
-import { KnowledgeAgent } from '../agents/KnowledgeAgent';
 import { isServiceConfigured } from '../../config/environment';
+import { OrchestratorAgent } from '../orchestrator/OrchestratorAgent';
+import { MemoryService } from '../memory/MemoryService';
+import { ConversationContextManager } from '../conversation/ConversationContextManager';
+import { TokenManager } from '../conversation/TokenManager';
 
 export class ChatProcessor {
   private static instance: ChatProcessor;
-  private llmManager: LLMProviderManager;
   private logger: Logger;
   private errorHandler: ErrorHandler;
-  private knowledgeAgent: KnowledgeAgent;
+  private orchestrator: OrchestratorAgent;
+  private memory: MemoryService;
+  private contextManager: ConversationContextManager;
+  private tokenManager: TokenManager;
 
   private constructor() {
-    this.llmManager = LLMProviderManager.getInstance();
     this.logger = Logger.getInstance();
     this.errorHandler = ErrorHandler.getInstance();
-    this.knowledgeAgent = new KnowledgeAgent('knowledge', {
-      personality: {
-        friendliness: 0.8,
-        formality: 0.7,
-        proactiveness: 0.6,
-        detail_orientation: 0.9,
-      },
-      skills: [],
-      knowledge_bases: [],
-      llm_config: {
-        provider: 'openai',
-        model: 'gpt-4-turbo-preview',
-        temperature: 0.7,
-      },
-    });
+    this.orchestrator = OrchestratorAgent.getInstance();
+    this.memory = MemoryService.getInstance();
+    this.contextManager = ConversationContextManager.getInstance();
+    this.tokenManager = TokenManager.getInstance();
   }
 
   public static getInstance(): ChatProcessor {
@@ -43,62 +32,87 @@ export class ChatProcessor {
     return this.instance;
   }
 
-  async processMessage(message: string, agent: Agent): Promise<string> {
+  async processMessage(message: string, agent: Agent, userId?: string): Promise<string> {
     try {
       if (!isServiceConfigured('openai')) {
         throw new Error('OpenAI API key not configured. Please check your environment variables.');
       }
 
-      this.logger.info('Processing message', 'chat', {
+      const threadId = agent.id || 'default_thread';
+      const effectiveUserId = userId || 'anonymous';
+
+      this.logger.info('Processing message with conversation context', 'chat', {
         agentId: agent.id,
         agentType: agent.type,
+        threadId,
+        userId: effectiveUserId
       });
 
-      // First, get relevant knowledge context
-      let knowledgeContext = '';
-      let vectorStoreStatus = '';
-      
-      try {
-        const knowledgeResponse = await this.knowledgeAgent.execute('query_with_context', {
-          query: message,
-        }) as any;
+      // Build system prompt based on agent type
+      const systemPrompt = this.buildSystemPrompt(agent);
 
-        knowledgeContext = knowledgeResponse?.answer || '';
-        
-        if (!knowledgeResponse.hasVectorStore) {
-          vectorStoreStatus = '\n\nNote: Vector store is currently disabled. Responses are based on general knowledge.';
-        }
-      } catch (error) {
-        this.logger.warning('Failed to get knowledge context:', 'chat', { error });
-        vectorStoreStatus = '\n\nNote: Unable to access knowledge base. Responses are based on general knowledge.';
-      }
-
-      // Build system prompt with knowledge context
-      const systemPrompt = getDomainPrompt(agent.type);
-      const agentContext = await getAgentContext(agent, message);
-      const contextMessage = `Context:\n${JSON.stringify(agentContext)}\n\nKnowledge Base:\n${knowledgeContext}${vectorStoreStatus}`;
-
-      const messages: ChatMessage[] = [
-        { role: 'system', content: systemPrompt },
-        { role: 'system', content: contextMessage },
-        { role: 'user', content: message }
-      ];
-
-      // Generate response
-      const response = await this.llmManager.generateResponse(
-        messages,
-        agent.type === 'technical' ? 'openai' : undefined,
-        {
-          temperature: this.getTemperatureForDomain(agent.type)
-        }
+      // Build complete conversation context with token management
+      const context = await this.contextManager.buildMessageContext(
+        threadId,
+        message,
+        effectiveUserId,
+        systemPrompt,
+        'gpt-4-turbo-preview'
       );
 
-      this.logger.info('Message processed successfully', 'chat', {
+      this.logger.info('Conversation context built', 'chat', {
+        messageCount: context.messages.length,
+        tokenUsage: context.tokenStats.usagePercentage,
+        relevantMemories: context.relevantMemories.length
+      });
+
+      // Log token statistics
+      console.log(`📊 Token Stats:`, context.tokenStats);
+      console.log(`🧠 Relevant Memories: ${context.relevantMemories.length}`);
+
+      // Route the request through the Orchestrator with full context
+      // ✨ NOW INCLUDING userId and context for RAG!
+      const orchestratorResponse = await this.orchestrator.processRequest({ 
+        message, 
+        agent,
+        userId: effectiveUserId,  // ← PASS userId for RAG
+        conversationHistory: context.messages,
+        relevantMemories: context.relevantMemories,
+        tokenStats: context.tokenStats,
+        context: {                // ← PASS full context for RAG
+          documentContext: context.documentContext,
+          sharedContext: context.sharedContext
+        }
+      });
+
+      this.logger.info('Message processed successfully via orchestrator', 'chat', {
         agentId: agent.id,
         agentType: agent.type,
       });
 
-      return response.content;
+      if (!orchestratorResponse?.success) {
+        throw new Error(orchestratorResponse?.error || 'Failed to process message');
+      }
+
+      const data = orchestratorResponse.data as any;
+      // Try common fields first, then fall back to stringifying the result
+      const answer = (
+        data?.message ||
+        data?.answer ||
+        (typeof data === 'string' ? data : JSON.stringify(data))
+      );
+
+      // Record conversation turns
+      this.contextManager.saveConversationTurn(threadId, 'user', message);
+      this.contextManager.saveConversationTurn(threadId, 'assistant', answer);
+
+      // Check if conversation should be archived
+      if (this.contextManager.shouldArchiveConversation(threadId, 24)) {
+        console.log(`📦 Conversation ${threadId} is ready for archiving`);
+        // Note: Actual archiving happens via scheduled task
+      }
+      
+      return answer;
     } catch (error) {
       this.logger.error('Message processing error', 'chat', {
         agentId: agent.id,
@@ -116,14 +130,59 @@ export class ChatProcessor {
     }
   }
 
-  private getTemperatureForDomain(domain: string): number {
-    const temperatures: Record<string, number> = {
-      technical: 0.3,
-      creative: 0.8,
-      hr: 0.6,
-      finance: 0.2,
-      default: 0.7
+  /**
+   * Build system prompt based on agent type and personality
+   */
+  private buildSystemPrompt(agent: Agent): string {
+    const basePrompts: Record<string, string> = {
+      hr: 'You are an HR assistant. Help with employee-related queries professionally and empathetically.',
+      finance: 'You are a finance expert. Provide accurate financial guidance and analysis.',
+      knowledge: 'You are a knowledge base assistant. Help find and explain information clearly.',
+      task: 'You are a task management assistant. Help organize and prioritize tasks effectively.',
+      email: 'You are an email assistant. Help manage and respond to emails professionally.',
+      meeting: 'You are a meeting coordinator. Help schedule and organize meetings efficiently.',
+      productivity: 'You are a productivity assistant. Help optimize time, tasks, and communications.',
+      crm: 'You are a CRM assistant. Help manage customer relationships and sales processes.',
+      automation: 'You are an automation specialist. Help automate repetitive tasks and workflows.',
+      default: 'You are a helpful AI assistant. Provide accurate, relevant, and thoughtful responses.'
     };
-    return temperatures[domain] || temperatures.default;
+
+    const basePrompt = basePrompts[agent.type] || basePrompts.default;
+
+    // Add personality traits if available
+    if (agent.personality) {
+      const personalityDesc = `
+
+Your communication style:
+- Friendliness: ${Math.round((agent.personality.friendliness || 0.7) * 100)}%
+- Formality: ${Math.round((agent.personality.formality || 0.5) * 100)}%
+- Proactiveness: ${Math.round((agent.personality.proactiveness || 0.6) * 100)}%
+- Detail Orientation: ${Math.round((agent.personality.detail_orientation || 0.7) * 100)}%
+
+Adjust your tone and responses accordingly.`;
+      
+      return basePrompt + personalityDesc;
+    }
+
+    return basePrompt;
+  }
+
+  /**
+   * Get conversation statistics for a thread
+   */
+  getConversationStats(threadId: string): {
+    messageCount: number;
+    tokenUsage: number;
+    shouldArchive: boolean;
+  } {
+    const history = this.contextManager.getConversationHistory(threadId);
+    const tokenUsage = this.tokenManager.countMessagesTokens(history);
+    const shouldArchive = this.contextManager.shouldArchiveConversation(threadId);
+
+    return {
+      messageCount: history.length,
+      tokenUsage,
+      shouldArchive
+    };
   }
 }

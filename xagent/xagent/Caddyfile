@@ -1,0 +1,59 @@
+# Multi-Agent Platform Caddyfile
+# This file configures Caddy as a reverse proxy for our application
+
+# Cloudflare Tunnel Configuration
+# The tunnel handles external access, Caddy just needs to listen locally
+:8086 {
+    # Enable CORS for development
+    header Access-Control-Allow-Origin "*"
+    header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+    header Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+
+    # Proxy API calls to backend service
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Proxy health check endpoint
+    handle /health {
+        reverse_proxy backend:8000 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Proxy Supabase calls (optional - for when you want to route through your server)
+    handle /supabase/* {
+        reverse_proxy https://cybstyrslstfxlabiqyy.supabase.co {
+            header_up Host cybstyrslstfxlabiqyy.supabase.co
+        }
+    }
+
+    # Serve the frontend application
+    handle {
+        reverse_proxy app:80 {
+            header_up Host {host}
+            header_up X-Real-IP {remote}
+            header_up X-Forwarded-For {remote}
+            header_up X-Forwarded-Proto {scheme}
+        }
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/access.log
+        format json
+    }
+}
+
+# Health check endpoint
+:8081 {
+    respond /health "OK" 200
+}

@@ -1,8 +1,7 @@
-import { supabaseInitializer } from './initialization';
-
-export function getSupabaseClient() {
-  return supabaseInitializer.getClient();
-}
-
-// Export for backward compatibility
-export const supabase = getSupabaseClient();
+// Re-export from the main index file to maintain compatibility
+export { 
+  supabase, 
+  getSupabaseClient, 
+  isSupabaseAvailable, 
+  isSupabaseConnected 
+} from './index';

@@ -5,7 +5,6 @@ import { SearchBar } from '../common/SearchBar';
 import { useDocumentStore } from '../../store/documentStore';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { Alert } from '../common/Alert';
-import { getPineconeError } from '../../services/pinecone/client';
 import { PineconeTest } from '../test/PineconeTest';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -17,10 +16,6 @@ export const DocumentsContainer: React.FC = () => {
 
   useEffect(() => {
     fetchDocuments();
-    const error = getPineconeError();
-    if (error) {
-      setPineconeError(error);
-    }
   }, [fetchDocuments]);
 
   const handleSearch = (query: string) => {

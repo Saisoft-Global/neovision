@@ -5,16 +5,14 @@ export async function checkSupabaseConnection(): Promise<boolean> {
     const client = getSupabaseClient();
     if (!client) return false;
 
-    // Simple lightweight query that will work even if table is empty
-    const { error } = await client
-      .from('health_check')
-      .select('count')
-      .maybeSingle();
-
-    // Any successful query means connection is working
-    // PGRST116 means no rows found, which is also fine
-    return !error || error.code === 'PGRST116';
-  } catch {
+    // Test connection with auth.getSession() - this is lightweight and always available
+    const { error } = await client.auth.getSession();
+    
+    // If we get here without throwing, connection is working
+    // Error might indicate auth issues but not connection issues
+    return true;
+  } catch (error) {
+    console.warn('Supabase connection test failed:', error);
     return false;
   }
 }

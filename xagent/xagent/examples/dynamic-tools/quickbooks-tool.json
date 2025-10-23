@@ -1,0 +1,81 @@
+{
+  "id": "quickbooks-integration",
+  "name": "QuickBooks Tool",
+  "description": "Integration with QuickBooks for invoices and customers",
+  "category": "integration",
+  "provider": "quickbooks",
+  "version": "1.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "oauth2",
+    "credentials": {
+      "access_token": "{{VITE_QUICKBOOKS_ACCESS_TOKEN}}",
+      "base_url": "https://quickbooks.api.intuit.com/v3/company/{{VITE_QUICKBOOKS_COMPANY_ID}}"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "create_invoice",
+      "name": "create_invoice",
+      "description": "Create an invoice in QuickBooks",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/invoice",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}",
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"CustomerRef\": {\"value\": \"{{customer_id}}\"}, \"Line\": [{\"Amount\": {{amount}}, \"DetailType\": \"SalesItemLineDetail\", \"SalesItemLineDetail\": {\"ItemRef\": {\"value\": \"1\"}}}]}"
+        }
+      },
+      "parameters": {
+        "customer_id": {
+          "type": "string",
+          "required": true,
+          "description": "QuickBooks customer ID"
+        },
+        "amount": {
+          "type": "number",
+          "required": true,
+          "description": "Invoice amount"
+        }
+      },
+      "response": {
+        "extractPath": "Invoice",
+        "successMessage": "Invoice {{response.DocNumber}} created for ${{response.TotalAmt}}"
+      }
+    },
+    {
+      "id": "search_invoices",
+      "name": "search_invoices",
+      "description": "Search for invoices in QuickBooks",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/query?query=SELECT * FROM Invoice WHERE CustomerRef = '{{customer_id}}'",
+        "headers": {
+          "Authorization": "Bearer {{access_token}}",
+          "Accept": "application/json"
+        }
+      },
+      "parameters": {
+        "customer_id": {
+          "type": "string",
+          "required": true,
+          "description": "QuickBooks customer ID"
+        }
+      },
+      "response": {
+        "extractPath": "QueryResponse.Invoice",
+        "successMessage": "Found {{response.length}} invoice(s)"
+      }
+    }
+  ]
+}
+
+

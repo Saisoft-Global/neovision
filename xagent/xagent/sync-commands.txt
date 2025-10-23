@@ -1,0 +1,49 @@
+# Manual SCP commands to sync authentication fixes
+
+# Run these commands one by one from PowerShell:
+
+scp src/services/agent/AgentFactory.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/agent/AgentFactory.ts
+
+scp src/services/email/EmailService.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/email/EmailService.ts
+
+scp src/services/context/SharedContext.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/context/SharedContext.ts
+
+scp src/services/knowledge/versioning/KnowledgeVersionManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/knowledge/versioning/KnowledgeVersionManager.ts
+
+scp src/services/workflow/template/WorkflowTemplateManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/workflow/template/WorkflowTemplateManager.ts
+
+scp src/services/workflow/version/WorkflowVersionManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/workflow/version/WorkflowVersionManager.ts
+
+scp src/services/meeting/MeetingService.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/meeting/MeetingService.ts
+
+scp src/services/metrics/CollaborationMetrics.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/metrics/CollaborationMetrics.ts
+
+scp src/services/feedback/FeedbackCollector.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/feedback/FeedbackCollector.ts
+
+scp src/services/training/DatasetManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/training/DatasetManager.ts
+
+scp src/services/training/ModelVersionManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/training/ModelVersionManager.ts
+
+scp src/services/integration/webhook/WebhookManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/integration/webhook/WebhookManager.ts
+
+scp src/services/integration/datasource/DataSourceManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/integration/datasource/DataSourceManager.ts
+
+scp src/services/agent/templates/TemplateManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/agent/templates/TemplateManager.ts
+
+scp src/services/embeddings/EmbeddingRefresher.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/embeddings/EmbeddingRefresher.ts
+
+scp src/services/auth/SessionManager.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/auth/SessionManager.ts
+
+scp src/services/auth/AuthService.ts saiworks@100.87.45.61:/home/saiworks/xagent/src/services/auth/AuthService.ts
+
+scp src/components/test/SupabaseConnectionTest.tsx saiworks@100.87.45.61:/home/saiworks/xagent/src/components/test/SupabaseConnectionTest.tsx
+# NOTE: Updated to handle "Auth session missing" as expected behavior when logged out
+
+scp src/routes/index.tsx saiworks@100.87.45.61:/home/saiworks/xagent/src/routes/index.tsx
+
+# After copying all files, SSH to server and rebuild:
+# ssh saiworks@100.87.45.61
+# cd /home/saiworks/xagent
+# docker-compose -f docker-compose-with-ollama.yml build --no-cache app
+# docker-compose -f docker-compose-with-ollama.yml up -d app
+

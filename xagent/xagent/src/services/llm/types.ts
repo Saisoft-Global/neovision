@@ -1,4 +1,4 @@
-export type LLMProvider = 'openai' | 'ollama';
+export type LLMProvider = 'openai' | 'groq' | 'ollama';
 
 export interface LLMConfig {
   provider: LLMProvider;

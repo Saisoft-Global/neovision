@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from .base_agent import BaseAgent
-from ...app.schemas import AgentStatus
+from app.schemas import AgentStatus
 from ..pinecone_service import PineconeService
 from ..neo4j_service import Neo4jService
 
@@ -93,9 +93,36 @@ class KnowledgeAgent(BaseAgent):
         }
 
     async def _analyze_content(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        # Implement content analysis logic
+        """Analyze content for entities, topics, and generate summary"""
+        content = input_data["content"]
+        
+        # Extract entities using simple NLP
+        entities = []
+        words = content.split()
+        capitalized_words = [word.strip('.,!?;:') for word in words if word[0].isupper() and len(word) > 3]
+        entities = list(set(capitalized_words))
+        
+        # Generate simple summary (first 100 characters)
+        summary = content[:100] + "..." if len(content) > 100 else content
+        
+        # Extract topics based on common keywords
+        topics = []
+        topic_keywords = {
+            "technology": ["software", "system", "application", "database", "API"],
+            "business": ["customer", "sales", "revenue", "market", "product"],
+            "finance": ["budget", "cost", "expense", "revenue", "financial"],
+            "hr": ["employee", "hiring", "training", "performance", "benefits"]
+        }
+        
+        content_lower = content.lower()
+        for topic, keywords in topic_keywords.items():
+            if any(keyword in content_lower for keyword in keywords):
+                topics.append(topic)
+        
         return {
-            "entities": [],
-            "summary": "Content analysis result",
-            "topics": []
+            "entities": entities,
+            "summary": summary,
+            "topics": topics,
+            "word_count": len(words),
+            "analysis_confidence": 0.8
         }

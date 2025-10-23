@@ -718,3 +718,4 @@ VITE_GROQ_API_KEY=your-groq-key            # For speed
 **Smart routing = Better quality + Lower costs!** 🚀
 
 
+

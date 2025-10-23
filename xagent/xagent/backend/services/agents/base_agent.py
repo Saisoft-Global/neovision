@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from abc import ABC, abstractmethod
-from ...app.schemas import AgentStatus
+from app.schemas import AgentStatus
 
 class BaseAgent(ABC):
     def __init__(self, agent_id: str, config: Dict[str, Any]):

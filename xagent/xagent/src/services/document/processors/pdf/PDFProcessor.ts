@@ -30,13 +30,12 @@ export class PDFProcessor {
       // Load PDF document with robust configuration
       const loadingTask = pdfjsLib.getDocument({
         data: new Uint8Array(arrayBuffer),
-        useWorkerFetch: true,
+        useWorkerFetch: false, // Disable worker fetch to avoid CORS issues
         isEvalSupported: false,
-        disableFontFace: false,
-        standardFontDataUrl: '/standard_fonts/',
-        cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-        cMapPacked: true,
-        verbosity: 0
+        disableFontFace: true, // Disable font face loading to avoid missing font errors
+        verbosity: 0,
+        // Remove standardFontDataUrl since fonts are missing
+        // Remove cMapUrl to avoid network dependencies
       });
 
       const pdf = await loadingTask.promise;
@@ -110,8 +109,9 @@ export class PDFProcessor {
 
       const testLoadingTask = pdfjsLib.getDocument({
         data: testData,
-        useWorkerFetch: true,
-        standardFontDataUrl: '/standard_fonts/',
+        useWorkerFetch: false, // Disable worker fetch to avoid CORS
+        disableFontFace: true, // Disable font face loading
+        verbosity: 0
       });
 
       await testLoadingTask.promise;

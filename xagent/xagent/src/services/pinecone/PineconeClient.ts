@@ -23,6 +23,7 @@ export class PineconeClient {
     if (!this.instance && !this.initializationError) {
       try {
         const config = getPineconeConfig();
+        // Pinecone v1 API still requires environment parameter
         this.instance = new Pinecone({
           apiKey: config.apiKey,
           environment: config.environment
@@ -60,7 +61,7 @@ export class PineconeClient {
   private static async initializeIndex(): Promise<void> {
     try {
       const config = getPineconeConfig();
-      this.index = this.instance!.Index(config.indexName);
+      this.index = this.instance!.index(config.indexName);
       
       // Verify connection by getting index stats
       await this.index.describeIndexStats();

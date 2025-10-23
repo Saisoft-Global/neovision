@@ -1,0 +1,295 @@
+{
+  "id": "booking-tool",
+  "name": "Travel Booking Tool",
+  "description": "Book flights, hotels, and create travel itineraries using Amadeus API",
+  "category": "integration",
+  "provider": "Amadeus",
+  "version": "1.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "api_key",
+    "credentials": {
+      "api_key": "{{AMADEUS_API_KEY}}",
+      "base_url": "https://api.amadeus.com/v2"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "search_flights",
+      "name": "search_flights",
+      "description": "Search for available flights based on origin, destination, and dates. Use this when user wants to find flights or travel options.",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/shopping/flight-offers",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        }
+      },
+      
+      "parameters": {
+        "originLocationCode": {
+          "type": "string",
+          "required": true,
+          "description": "Departure airport code (e.g., JFK, DXB, LHR)"
+        },
+        "destinationLocationCode": {
+          "type": "string",
+          "required": true,
+          "description": "Arrival airport code (e.g., LHR, CDG, FCO)"
+        },
+        "departureDate": {
+          "type": "string",
+          "required": true,
+          "description": "Departure date in YYYY-MM-DD format"
+        },
+        "returnDate": {
+          "type": "string",
+          "required": false,
+          "description": "Return date for round trip in YYYY-MM-DD format"
+        },
+        "adults": {
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "Number of adult passengers"
+        },
+        "travelClass": {
+          "type": "string",
+          "required": false,
+          "default": "ECONOMY",
+          "description": "Travel class: ECONOMY, PREMIUM_ECONOMY, BUSINESS, or FIRST"
+        },
+        "max": {
+          "type": "number",
+          "required": false,
+          "default": 10,
+          "description": "Maximum number of flight offers to return"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "transform": {
+          "flight_id": "id",
+          "price": "price.total",
+          "currency": "price.currency",
+          "airline": "validatingAirlineCodes[0]",
+          "duration": "itineraries[0].duration"
+        },
+        "successMessage": "Found {{data.length}} available flights"
+      },
+      
+      "errorHandling": {
+        "retryCount": 3,
+        "retryDelay": 1000,
+        "fallbackMessage": "Unable to search flights at this time. Please try again later."
+      }
+    },
+    
+    {
+      "id": "search_hotels",
+      "name": "search_hotels",
+      "description": "Search for available hotels in a city. Use this when user wants to find accommodation or hotels.",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/shopping/hotel-offers",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        }
+      },
+      
+      "parameters": {
+        "cityCode": {
+          "type": "string",
+          "required": true,
+          "description": "IATA city code (e.g., NYC, PAR, ROM)"
+        },
+        "checkInDate": {
+          "type": "string",
+          "required": true,
+          "description": "Check-in date in YYYY-MM-DD format"
+        },
+        "checkOutDate": {
+          "type": "string",
+          "required": true,
+          "description": "Check-out date in YYYY-MM-DD format"
+        },
+        "adults": {
+          "type": "number",
+          "required": false,
+          "default": 1,
+          "description": "Number of adult guests"
+        },
+        "radius": {
+          "type": "number",
+          "required": false,
+          "default": 5,
+          "description": "Search radius in kilometers"
+        },
+        "radiusUnit": {
+          "type": "string",
+          "required": false,
+          "default": "KM",
+          "description": "Radius unit: KM or MILE"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "transform": {
+          "hotel_id": "hotel.hotelId",
+          "hotel_name": "hotel.name",
+          "price": "offers[0].price.total",
+          "currency": "offers[0].price.currency",
+          "rating": "hotel.rating"
+        },
+        "successMessage": "Found {{data.length}} hotels"
+      },
+      
+      "errorHandling": {
+        "retryCount": 3,
+        "retryDelay": 1000,
+        "fallbackMessage": "Unable to search hotels. Please try again."
+      }
+    },
+    
+    {
+      "id": "create_itinerary",
+      "name": "create_itinerary",
+      "description": "Create a personalized travel itinerary based on user preferences and past conversations. Use this when user wants a complete travel plan.",
+      
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/shopping/activities",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"destination\":\"{{destination}}\",\"startDate\":\"{{startDate}}\",\"endDate\":\"{{endDate}}\"}"
+        }
+      },
+      
+      "parameters": {
+        "destination": {
+          "type": "string",
+          "required": true,
+          "description": "Destination city or country"
+        },
+        "startDate": {
+          "type": "string",
+          "required": true,
+          "description": "Trip start date YYYY-MM-DD"
+        },
+        "endDate": {
+          "type": "string",
+          "required": true,
+          "description": "Trip end date YYYY-MM-DD"
+        },
+        "budget": {
+          "type": "number",
+          "required": false,
+          "description": "Total budget in USD"
+        },
+        "interests": {
+          "type": "array",
+          "required": false,
+          "description": "User interests (art, food, adventure, etc.)"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "successMessage": "Created {{duration}}-day itinerary for {{destination}}"
+      }
+    },
+    
+    {
+      "id": "book_flight",
+      "name": "book_flight",
+      "description": "Book a specific flight. REQUIRES USER APPROVAL. Use this only after user has reviewed and approved a flight option.",
+      
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/booking/flight-orders",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"data\":{\"type\":\"flight-order\",\"flightOffers\":[{\"id\":\"{{flightId}}\"}],\"travelers\":[{{passengerInfo}}],\"remarks\":{\"general\":[{\"subType\":\"GENERAL_MISCELLANEOUS\",\"text\":\"ONLINE BOOKING\"}]},\"ticketingAgreement\":{\"option\":\"DELAY_TO_CANCEL\",\"delay\":\"6D\"}}}"
+        }
+      },
+      
+      "parameters": {
+        "flightId": {
+          "type": "string",
+          "required": true,
+          "description": "Flight offer ID from search results"
+        },
+        "passengerInfo": {
+          "type": "object",
+          "required": true,
+          "description": "Passenger details including name, dateOfBirth, gender, contact, documents"
+        },
+        "approved": {
+          "type": "boolean",
+          "required": true,
+          "description": "User must approve before booking - always ask user for confirmation first"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "successMessage": "Flight booked successfully! Confirmation number: {{id}}"
+      },
+      
+      "errorHandling": {
+        "retryCount": 2,
+        "retryDelay": 2000,
+        "fallbackMessage": "Booking failed. Please verify passenger information and try again."
+      }
+    },
+    
+    {
+      "id": "get_booking_status",
+      "name": "get_booking_status",
+      "description": "Check the status of an existing flight booking. Use when user asks about booking status or confirmation.",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/booking/flight-orders/{{bookingId}}",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        }
+      },
+      
+      "parameters": {
+        "bookingId": {
+          "type": "string",
+          "required": true,
+          "description": "Booking confirmation ID or PNR"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "transform": {
+          "booking_id": "id",
+          "status": "flightOffers[0].source",
+          "passenger": "travelers[0].name.firstName"
+        },
+        "successMessage": "Booking status: {{status}}"
+      }
+    }
+  ]
+}
+
+

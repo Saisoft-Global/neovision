@@ -45,7 +45,13 @@ export class BrowserDocumentProcessor {
 
       switch (file.type) {
         case 'application/pdf':
-          content = await this.pdfProcessor.processFile(file);
+          try {
+            content = await this.pdfProcessor.processFile(file);
+          } catch (error) {
+            console.warn('PDF processing failed, trying fallback:', error);
+            // Fallback: return basic file info
+            content = `PDF file: ${file.name} (${(file.size / 1024).toFixed(2)} KB)\n\nNote: PDF text extraction failed. File has been uploaded but content processing is limited.`;
+          }
           break;
 
         case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':

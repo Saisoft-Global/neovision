@@ -1,7 +1,8 @@
 import { handleOpenAIError } from './errors';
-import OpenAIClient from './client';
 import type { ChatMessage } from '../llm/types';
 import { isServiceConfigured } from '../../config/environment';
+
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 
 export async function createChatCompletion(
   messages: ChatMessage[],
@@ -14,20 +15,28 @@ export async function createChatCompletion(
   }
 
   try {
-    const client = await OpenAIClient.getInstance();
-    if (!client) {
-      throw new Error('OpenAI client not available');
-    }
-
-    const response = await client.chat.completions.create({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
+    // Use backend proxy to avoid CORS
+    const response = await fetch(`${BACKEND_URL}/api/openai/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        temperature,
+        max_tokens: maxTokens,
+      }),
     });
 
-    return response;
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.detail || 'OpenAI API request failed');
+    }
+
+    return await response.json();
   } catch (error) {
+    console.error('OpenAI chat completion error:', error);
     handleOpenAIError(error);
   }
 }

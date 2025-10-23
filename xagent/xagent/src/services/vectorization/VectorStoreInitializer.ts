@@ -1,4 +1,4 @@
-import { getVectorStore } from '../pinecone/client';
+import { vectorService } from '../vector/VectorService';
 import { EventEmitter } from '../../utils/events/EventEmitter';
 import { isServiceConfigured } from '../../config/environment';
 
@@ -48,13 +48,11 @@ export class VectorStoreInitializer {
         return;
       }
 
-      const vectorStore = await getVectorStore();
-      if (!vectorStore) {
-        throw new Error('Vector store not available');
+      // Test vector service connection via backend
+      const status = await vectorService.getStatus();
+      if (!status.available) {
+        throw new Error('Vector service not available via backend');
       }
-
-      // Verify connection by getting index stats
-      await vectorStore.describeIndexStats();
 
       this._initialized = true;
       this._error = null;

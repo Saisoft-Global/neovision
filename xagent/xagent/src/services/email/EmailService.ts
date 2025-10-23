@@ -1,5 +1,5 @@
 import type { Email } from '../../types/email';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../config/supabase';
 import { EmailAgent } from '../agents/EmailAgent';
 import { AgentFactory } from '../agent/AgentFactory';
 
@@ -9,10 +9,7 @@ export class EmailService {
   private supabase;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.initializeAgent();
   }
 
@@ -24,8 +21,9 @@ export class EmailService {
   }
 
   private async initializeAgent() {
-    const factory = AgentFactory.getInstance();
-    this.emailAgent = await factory.getAgent('email') as EmailAgent;
+    // Skip agent initialization for now to avoid errors
+    // This will be properly implemented when email agents are created
+    console.log('EmailService initialized without agent (will be implemented later)');
   }
 
   public async processIncomingEmail(email: Email) {

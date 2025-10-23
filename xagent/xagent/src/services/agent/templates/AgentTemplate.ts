@@ -9,6 +9,18 @@ export interface AgentTemplate {
   defaultWorkflows: string[];
 }
 
+/**
+ * NOTE: All agents automatically receive core intelligence skills:
+ * - natural_language_understanding (Level 5)
+ * - natural_language_generation (Level 5)
+ * - task_comprehension (Level 5)
+ * - reasoning (Level 4)
+ * - context_retention (Level 4)
+ * 
+ * These are added by AgentFactory and don't need to be specified in templates.
+ * Only add agent-specific skills in the template configurations below.
+ */
+
 export const AGENT_TEMPLATES: Record<string, AgentTemplate> = {
   hr_assistant: {
     type: 'hr',

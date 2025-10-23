@@ -1,0 +1,118 @@
+{
+  "id": "slack-integration",
+  "name": "Slack Messaging Tool",
+  "description": "Send messages and manage channels in Slack",
+  "category": "communication",
+  "provider": "slack",
+  "version": "1.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "bearer",
+    "credentials": {
+      "bot_token": "{{VITE_SLACK_BOT_TOKEN}}",
+      "base_url": "https://slack.com/api"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "send_message",
+      "name": "send_message",
+      "description": "Send a message to a Slack channel",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/chat.postMessage",
+        "headers": {
+          "Authorization": "Bearer {{bot_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"channel\": \"{{channel}}\", \"text\": \"{{message}}\"}"
+        }
+      },
+      "parameters": {
+        "channel": {
+          "type": "string",
+          "required": true,
+          "description": "Slack channel ID or name (e.g., #general)"
+        },
+        "message": {
+          "type": "string",
+          "required": true,
+          "description": "Message text to send"
+        }
+      },
+      "response": {
+        "successMessage": "Message sent to {{channel}}: {{message}}"
+      }
+    },
+    {
+      "id": "create_channel",
+      "name": "create_channel",
+      "description": "Create a new Slack channel",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/conversations.create",
+        "headers": {
+          "Authorization": "Bearer {{bot_token}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"name\": \"{{channel_name}}\", \"is_private\": {{is_private}}}"
+        }
+      },
+      "parameters": {
+        "channel_name": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the channel to create"
+        },
+        "is_private": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether the channel should be private",
+          "default": false
+        }
+      },
+      "response": {
+        "extractPath": "channel",
+        "successMessage": "Created channel: #{{response.name}}"
+      }
+    },
+    {
+      "id": "get_channel_history",
+      "name": "get_channel_history",
+      "description": "Get recent messages from a Slack channel",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/conversations.history?channel={{channel}}&limit={{limit}}",
+        "headers": {
+          "Authorization": "Bearer {{bot_token}}"
+        }
+      },
+      "parameters": {
+        "channel": {
+          "type": "string",
+          "required": true,
+          "description": "Slack channel ID"
+        },
+        "limit": {
+          "type": "number",
+          "required": false,
+          "description": "Number of messages to retrieve",
+          "default": 10
+        }
+      },
+      "response": {
+        "extractPath": "messages",
+        "successMessage": "Retrieved {{response.length}} message(s) from channel"
+      }
+    }
+  ]
+}
+
+

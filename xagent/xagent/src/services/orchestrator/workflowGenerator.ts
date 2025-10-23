@@ -51,10 +51,27 @@ export async function createWorkflow(
           priority: 2,
         },
         {
+          type: 'crm_email',
+          action: 'process_crm_email',
+          payload: input,
+          priority: 3,
+        },
+        {
           type: 'task',
           action: 'extract_tasks',
           payload: input,
-          priority: 3,
+          priority: 4,
+        }
+      );
+      break;
+    
+    case 'crm_lead_creation':
+      workflow.push(
+        {
+          type: 'crm_email',
+          action: 'process_crm_email',
+          payload: input,
+          priority: 1,
         }
       );
       break;

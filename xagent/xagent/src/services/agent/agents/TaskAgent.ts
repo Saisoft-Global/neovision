@@ -4,8 +4,8 @@ import { BaseAgent } from '../BaseAgent';
 import { createChatCompletion } from '../../openai/chat';
 
 export class TaskAgent extends BaseAgent {
-  constructor(id: string, config: AgentConfig) {
-    super(id, config);
+  constructor(id: string, config: AgentConfig, organizationId: string | null = null) {
+    super(id, config, organizationId);  // ✅ Pass organizationId to BaseAgent
   }
 
   async execute(action: string, params: Record<string, unknown>): Promise<AgentResponse> {

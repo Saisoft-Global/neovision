@@ -3,7 +3,7 @@
  * Manages organization membership, invitations, and member permissions
  */
 
-import { getSupabaseClient } from '../../lib/supabase';
+import { getSupabaseClient } from '../../config/supabase/client';
 import crypto from 'crypto';
 
 export type MemberRole = 'owner' | 'admin' | 'manager' | 'member' | 'viewer' | 'guest';
@@ -541,4 +541,5 @@ export class MembershipService {
 }
 
 export const membershipService = MembershipService.getInstance();
+
 

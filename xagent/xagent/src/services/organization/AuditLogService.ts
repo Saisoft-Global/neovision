@@ -3,7 +3,7 @@
  * Tracks all organization activities for compliance and security
  */
 
-import { getSupabaseClient } from '../../lib/supabase';
+import { getSupabaseClient } from '../../config/supabase/client';
 
 export interface AuditLog {
   id: string;
@@ -233,4 +233,5 @@ export class AuditLogService {
 }
 
 export const auditLogService = AuditLogService.getInstance();
+
 

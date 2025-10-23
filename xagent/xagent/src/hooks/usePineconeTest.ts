@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PineconeClient } from '../services/pinecone/PineconeClient';
+import { vectorService } from '../services/vector/VectorService';
 import { isServiceConfigured } from '../config/environment';
 
 interface PineconeStatus {
@@ -19,30 +19,23 @@ export function usePineconeTest() {
 
   const testConnection = async () => {
     setIsLoading(true);
-    PineconeClient.reset();
     
     try {
       if (!isServiceConfigured('pinecone')) {
         throw new Error('Pinecone is not configured. Please check your environment variables.');
       }
 
-      const client = await PineconeClient.getInstance();
-      const clientConnected = client !== null;
+      // Test vector service connection via backend
+      const status = await vectorService.getStatus();
       
-      const index = await PineconeClient.getIndex();
-      let indexConnected = false;
-      let indexStats;
-      
-      if (index) {
-        indexStats = await index.describeIndexStats();
-        indexConnected = true;
-      }
-
       setStatus({
-        client: clientConnected,
-        index: indexConnected,
-        error: null,
-        stats: indexStats
+        client: status.available,
+        index: status.available,
+        error: status.available ? null : 'Vector service not available via backend',
+        stats: status.available ? { 
+          index_name: status.index_name,
+          backend_available: true 
+        } : null
       });
     } catch (error) {
       setStatus({

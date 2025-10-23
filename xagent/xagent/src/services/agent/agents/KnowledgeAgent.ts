@@ -8,9 +8,12 @@ import { KnowledgeGraphManager } from '../../knowledge/graph/KnowledgeGraphManag
 export class KnowledgeAgent extends BaseAgent {
   private graphManager: KnowledgeGraphManager;
 
-  constructor(id: string, config: AgentConfig) {
-    super(id, config);
+  constructor(id: string, config: AgentConfig, organizationId: string | null = null) {
+    super(id, config, organizationId);  // ✅ Pass organizationId to BaseAgent
     this.graphManager = new KnowledgeGraphManager();
+    if (organizationId) {
+      this.graphManager.setOrganizationContext(organizationId);  // ✅ Set context for graph manager
+    }
   }
 
   async execute(action: string, params: Record<string, unknown>): Promise<AgentResponse> {

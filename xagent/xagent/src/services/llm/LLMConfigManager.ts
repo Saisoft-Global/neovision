@@ -48,7 +48,7 @@ export class LLMConfigManager {
   private constructor(options?: Partial<LLMConfigManagerOptions>) {
     this.options = {
       enableFallbacks: true,
-      defaultProvider: 'openai',
+      defaultProvider: 'groq', // ⚡ USE GROQ BY DEFAULT FOR 10X SPEED!
       logLevel: 'info',
       ...options
     };
@@ -139,7 +139,7 @@ export class LLMConfigManager {
       this.currentOrganizationId = organizationId;
       
       // Fetch organization LLM settings from Supabase
-      const { getSupabaseClient } = await import('../../lib/supabase');
+        const { getSupabaseClient } = await import('../../config/supabase/client');
       const supabase = getSupabaseClient();
       
       const { data, error } = await supabase
@@ -666,7 +666,7 @@ export class LLMConfigManager {
     if (!this.currentOrganizationId) return;
 
     try {
-      const { getSupabaseClient } = await import('../../lib/supabase');
+        const { getSupabaseClient } = await import('../../config/supabase/client');
       const supabase = getSupabaseClient();
 
       await supabase

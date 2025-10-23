@@ -6,8 +6,8 @@ import { generateMeetingMinutes } from '../../meeting/notes';
 import { suggestMeetingTime } from '../../meeting/scheduler';
 
 export class MeetingAgent extends BaseAgent {
-  constructor(id: string, config: AgentConfig) {
-    super(id, config);
+  constructor(id: string, config: AgentConfig, organizationId: string | null = null) {
+    super(id, config, organizationId);  // ✅ Pass organizationId to BaseAgent
   }
 
   async execute(action: string, params: Record<string, unknown>): Promise<AgentResponse> {

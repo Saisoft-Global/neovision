@@ -1,8 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Loader, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { AUTH_ERROR_MESSAGES } from '../../services/auth/errors/ErrorMessages';
+import { GradientBackground } from '../ui/GradientBackground';
+import { ModernCard } from '../ui/ModernCard';
+import { ModernInput } from '../ui/ModernInput';
+import { ModernButton } from '../ui/ModernButton';
 
 const LoginForm: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -44,53 +48,59 @@ const LoginForm: React.FC = () => {
   const isSubmitDisabled = !email || !password || isLoading || password.length < 6;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          {isRegistering ? 'Create your account' : 'Sign in to your account'}
-        </h2>
-      </div>
+    <GradientBackground variant="primary">
+      <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        {/* Logo and Title */}
+        <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+          <div className="flex justify-center mb-4">
+            <div className="p-4 glass-card rounded-2xl">
+              <Sparkles className="w-12 h-12 text-white" />
+            </div>
+          </div>
+          <h2 className="text-4xl font-bold text-white text-shadow-lg mb-2">
+            Multi-Agent AI Platform
+          </h2>
+          <p className="text-white/80 text-lg">
+            {isRegistering ? 'Create your account' : 'Welcome back'}
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Login Card */}
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <ModernCard variant="glass" className="backdrop-blur-xl">
+            <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your email"
-                />
-                <Mail className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" />
-              </div>
+              <ModernInput
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                label="Email address"
+                placeholder="Enter your email"
+                icon={<Mail className="w-5 h-5" />}
+                className="bg-white/90"
+              />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
+              <div className="relative">
+                <ModernInput
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  label="Password"
                   placeholder="Enter your password"
+                  icon={<Lock className="w-5 h-5" />}
+                  error={password && password.length < 6 ? AUTH_ERROR_MESSAGES.WEAK_PASSWORD : undefined}
+                  className="bg-white/90"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-500"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPassword ? (
                     <EyeOff className="h-5 w-5" />
@@ -99,52 +109,42 @@ const LoginForm: React.FC = () => {
                   )}
                 </button>
               </div>
-              {password && password.length < 6 && (
-                <p className="mt-1 text-sm text-red-600">
-                  {AUTH_ERROR_MESSAGES.WEAK_PASSWORD}
-                </p>
-              )}
             </div>
 
             {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <AlertCircle className="h-5 w-5 text-red-400" />
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
+              <div className="rounded-xl bg-red-500/10 backdrop-blur-sm border border-red-500/20 p-4">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                  <p className="text-sm text-red-200">{error}</p>
                 </div>
               </div>
             )}
 
-            <button
+            <ModernButton
               type="submit"
               disabled={isSubmitDisabled}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed relative"
+              loading={isLoading}
+              variant="primary"
+              size="lg"
+              className="w-full"
             >
-              {isLoading ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  <span className="ml-2">Processing...</span>
-                </>
-              ) : (
-                <span>{isRegistering ? 'Sign up' : 'Sign in'}</span>
-              )}
-            </button>
+              {isRegistering ? 'Create Account' : 'Sign In'}
+            </ModernButton>
 
-            <div className="text-sm text-center">
+            <div className="text-center">
               <button
                 type="button"
                 onClick={() => setIsRegistering(!isRegistering)}
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="text-sm font-medium text-white/80 hover:text-white transition-colors"
               >
                 {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Sign up'}
               </button>
             </div>
           </form>
+          </ModernCard>
         </div>
       </div>
-    </div>
+    </GradientBackground>
   );
 };
 

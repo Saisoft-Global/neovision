@@ -1,14 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../config/supabase';
 
 export class ModelVersionManager {
   private static instance: ModelVersionManager;
   private supabase;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
   }
 
   public static getInstance(): ModelVersionManager {

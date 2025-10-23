@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bot, Settings } from 'lucide-react';
+import { OrganizationSelector } from '../organization/OrganizationSelector';
 
 interface HeaderProps {
   showAdmin: boolean;
@@ -14,15 +15,18 @@ export const Header: React.FC<HeaderProps> = ({ showAdmin, onToggleAdmin }) => (
           <Bot className="w-8 h-8 text-blue-600" />
           <h1 className="text-2xl font-bold text-gray-900">Multi-Agent Platform</h1>
         </div>
-        <button
-          onClick={onToggleAdmin}
-          className={`p-2 rounded-lg transition-colors ${
-            showAdmin ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'
-          }`}
-          title="Settings"
-        >
-          <Settings className="w-6 h-6" />
-        </button>
+        <div className="flex items-center space-x-4">
+          <OrganizationSelector />
+          <button
+            onClick={onToggleAdmin}
+            className={`p-2 rounded-lg transition-colors ${
+              showAdmin ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'
+            }`}
+            title="Settings"
+          >
+            <Settings className="w-6 h-6" />
+          </button>
+        </div>
       </div>
     </div>
   </header>

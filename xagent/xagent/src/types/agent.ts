@@ -9,6 +9,8 @@ export interface Agent {
   metadata?: Record<string, unknown>;
 }
 
+export type AgentType = 'knowledge' | 'email' | 'meeting' | 'task' | 'desktop_automation' | 'tool_enabled' | 'direct_execution' | 'productivity';
+
 export interface Message {
   id: string;
   senderId: string;

@@ -90,3 +90,4 @@ VITE_PINECONE_INDEX_NAME=your_pinecone_index_name_here
 3. **Always work** with just OpenAI configured
 4. **Get better** as you add more providers
 
+

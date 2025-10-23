@@ -1,16 +1,15 @@
-import { getVectorStore, getPineconeError } from '../../pinecone/client';
+import { getVectorStore } from '../../pinecone/client';
 import type { HealthCheck } from '../../../types/health';
 
 export class VectorStoreHealth {
   async checkHealth(): Promise<HealthCheck> {
     try {
       const vectorStore = await getVectorStore();
-      if (!vectorStore) {
-        const error = getPineconeError();
+      if (!vectorStore || !vectorStore.isPineconeAvailable()) {
         return {
           status: 'error',
-          message: error || 'Vector store not available',
-          details: { error },
+          message: 'Vector store not available - Pinecone may not be configured',
+          details: { error: 'Pinecone not configured' },
         };
       }
 

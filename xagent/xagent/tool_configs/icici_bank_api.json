@@ -1,0 +1,100 @@
+{
+  "id": "icici_bank_api",
+  "name": "ICICI Bank API",
+  "description": "ICICI Bank APIs for customer operations",
+  "category": "integration",
+  "provider": "ICICI Bank",
+  "version": "2.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "api_key",
+    "credentials": {
+      "api_key": "{{ICICI_API_KEY}}",
+      "base_url": "{{ICICI_API_URL}}"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "icici_get_balance",
+      "name": "get_account_balance",
+      "description": "Retrieve ICICI account balance",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v2/accounts/{{account_number}}/balance",
+        "headers": {
+          "X-API-Key": "{{api_key}}",
+          "X-Client-Id": "XAGENT_PLATFORM"
+        }
+      },
+      
+      "parameters": {
+        "account_number": {
+          "type": "string",
+          "required": true,
+          "description": "Account number"
+        }
+      },
+      
+      "response": {
+        "extractPath": "balanceInfo",
+        "successMessage": "ICICI Account Balance: ₹{{response.balance}}"
+      },
+      
+      "errorHandling": {
+        "useBrowserFallback": true,
+        "browserFallbackConfig": {
+          "websiteUrl": "https://infinity.icicibank.com",
+          "searchQuery": "ICICI iMobile login check balance"
+        }
+      }
+    },
+    
+    {
+      "id": "icici_transactions",
+      "name": "get_transaction_history",
+      "description": "Get ICICI transaction history",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/api/v2/accounts/{{account_number}}/transactions?days={{days}}",
+        "headers": {
+          "X-API-Key": "{{api_key}}"
+        }
+      },
+      
+      "parameters": {
+        "account_number": {
+          "type": "string",
+          "required": true,
+          "description": "Account number"
+        },
+        "days": {
+          "type": "number",
+          "required": false,
+          "description": "Number of days to fetch",
+          "default": 30
+        }
+      },
+      
+      "response": {
+        "extractPath": "transactions",
+        "successMessage": "Found {{response.length}} transactions"
+      },
+      
+      "errorHandling": {
+        "useBrowserFallback": true,
+        "browserFallbackConfig": {
+          "websiteUrl": "https://infinity.icicibank.com",
+          "instructions": "Navigate to Account Statement"
+        }
+      }
+    }
+  ]
+}
+
+
+

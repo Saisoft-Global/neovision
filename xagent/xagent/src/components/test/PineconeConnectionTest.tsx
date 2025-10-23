@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, RefreshCw, AlertCircle } from 'lucide-react';
-import { PineconeClient } from '../../services/pinecone/PineconeClient';
+import { vectorService } from '../../services/vector/VectorService';
 import { isServiceConfigured } from '../../config/environment';
 
 export const PineconeConnectionTest: React.FC = () => {
@@ -18,32 +18,23 @@ export const PineconeConnectionTest: React.FC = () => {
 
   const testConnection = async () => {
     setIsLoading(true);
-    PineconeClient.reset(); // Reset any previous connection state
     
     try {
       if (!isServiceConfigured('pinecone')) {
         throw new Error('Pinecone is not configured. Please check your environment variables.');
       }
 
-      // Test client connection
-      const client = await PineconeClient.getInstance();
-      const clientConnected = client !== null;
+      // Test vector service connection via backend
+      const status = await vectorService.getStatus();
       
-      // Test index connection and get stats
-      const index = await PineconeClient.getIndex();
-      let indexConnected = false;
-      let indexStats;
-      
-      if (index) {
-        indexStats = await index.describeIndexStats();
-        indexConnected = true;
-      }
-
       setStatus({
-        client: clientConnected,
-        index: indexConnected,
-        error: null,
-        stats: indexStats
+        client: status.available,
+        index: status.available,
+        error: status.available ? null : 'Vector service not available via backend',
+        stats: status.available ? { 
+          index_name: status.index_name,
+          backend_available: true 
+        } : null
       });
     } catch (error) {
       setStatus({

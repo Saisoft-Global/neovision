@@ -1,5 +1,5 @@
 import type { AgentConfig } from '../../types/agent-framework';
-import type { AgentResponse } from '../types';
+import type { AgentResponse } from '../agent/types';
 import { BaseAgent } from './BaseAgent';
 import { getVectorStore } from '../pinecone/client';
 import { generateEmbeddings } from '../openai/embeddings';

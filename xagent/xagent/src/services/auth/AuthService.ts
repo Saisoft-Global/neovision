@@ -1,199 +1,179 @@
-import type { User as SupabaseUser } from '@supabase/supabase-js';
-import type { User, Role } from '../../types/auth';
+// Real Auth service with proper implementation
 import { getSupabaseClient } from '../../config/supabase';
-import { SessionManager } from './SessionManager';
-import { handleAuthError } from './errors/ErrorHandler';
-import { withRetry } from '../../utils/retry';
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  role?: string;
+}
+
+export interface AuthResult {
+  user: User | null;
+  token?: string;
+  error?: string;
+}
 
 export class AuthService {
-  private static instance: AuthService;
-  private sessionManager: SessionManager;
-  private retryAttempts: number = 0;
-  private readonly MAX_RETRIES = 3;
-  private readonly PUBLIC_ROUTES = ['/login', '/signup', '/reset-password'];
+  private supabase = getSupabaseClient();
 
-  private constructor() {
-    this.sessionManager = SessionManager.getInstance();
+  async login(email: string, password: string): Promise<AuthResult> {
+    try {
+      const { data, error } = await this.supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        return { user: null, error: error.message };
+      }
+
+      const user: User = {
+        id: data.user?.id || '',
+        email: data.user?.email || '',
+        name: data.user?.user_metadata?.name,
+        role: data.user?.user_metadata?.role
+      };
+
+      return { user, token: data.session?.access_token };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { user: null, error: 'Login failed' };
+    }
   }
 
-  public static getInstance(): AuthService {
-    if (!this.instance) {
-      this.instance = new AuthService();
+  async register(email: string, password: string, name?: string): Promise<AuthResult> {
+    try {
+      const { data, error } = await this.supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name: name || email.split('@')[0]
+          }
+        }
+      });
+
+      if (error) {
+        return { user: null, error: error.message };
+      }
+
+      const user: User = {
+        id: data.user?.id || '',
+        email: data.user?.email || '',
+        name: name || email.split('@')[0]
+      };
+
+      return { user, token: data.session?.access_token };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { user: null, error: 'Registration failed' };
     }
-    return this.instance;
+  }
+
+  async logout(): Promise<void> {
+    try {
+      await this.supabase.auth.signOut();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   }
 
   async getCurrentUser(): Promise<User | null> {
-    const supabase = getSupabaseClient();
-    if (!supabase) return null;
-
     try {
-      // Skip auth check for public routes
-      if (this.isPublicRoute()) {
+      const { data: { user: authUser } } = await this.supabase.auth.getUser();
+      
+      if (!authUser) {
         return null;
       }
 
-      const { data: { user }, error } = await withRetry(
-        () => supabase.auth.getUser(),
-        this.MAX_RETRIES,
-        1000
-      );
+      // Fetch user profile from public.users table
+      const { data: userProfile, error } = await this.supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
 
-      if (error) {
-        // Only log error if not a missing session on public route
-        if (!(error.name === 'AuthSessionMissingError' && this.isPublicRoute())) {
-          console.error('Get current user error:', error);
-        }
-        return null;
+      if (error || !userProfile) {
+        console.warn('User profile not found in public.users, using auth data:', error);
+        return {
+          id: authUser.id,
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name,
+          role: authUser.user_metadata?.role || 'user'
+        };
       }
 
-      return user ? this.transformUser(user) : null;
+      return {
+        id: userProfile.id,
+        email: userProfile.email,
+        name: userProfile.metadata?.name || authUser.user_metadata?.name,
+        role: userProfile.role,
+        permissions: userProfile.permissions
+      };
     } catch (error) {
-      // Only log error if not a missing session on public route
-      if (!(error?.name === 'AuthSessionMissingError' && this.isPublicRoute())) {
-        console.error('Error getting current user:', error);
-      }
+      console.error('Get current user error:', error);
       return null;
     }
   }
 
-  private isPublicRoute(): boolean {
-    return this.PUBLIC_ROUTES.includes(window.location.pathname);
+  async resetPassword(email: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { error } = await this.supabase.auth.resetPasswordForEmail(email);
+      
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Password reset error:', error);
+      return { success: false, error: 'Password reset failed' };
+    }
   }
 
-  async signIn(email: string, password: string): Promise<void> {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      throw new Error('Authentication service not available');
-    }
-
+  async updateProfile(updates: Partial<User>): Promise<AuthResult> {
     try {
-      const { data, error } = await withRetry(
-        () => supabase.auth.signInWithPassword({ email, password }),
-        this.MAX_RETRIES,
-        1000
-      );
+      const { data, error } = await this.supabase.auth.updateUser({
+        data: updates
+      });
 
       if (error) {
-        throw handleAuthError(error);
+        return { user: null, error: error.message };
       }
 
-      // Reset retry attempts on successful sign in
-      this.retryAttempts = 0;
+      const user: User = {
+        id: data.user?.id || '',
+        email: data.user?.email || '',
+        name: data.user?.user_metadata?.name,
+        role: data.user?.user_metadata?.role
+      };
 
-      // Ensure user data is synced
-      if (data.user) {
-        await this.syncUserData(data.user);
-      }
+      return { user };
     } catch (error) {
-      throw handleAuthError(error);
+      console.error('Profile update error:', error);
+      return { user: null, error: 'Profile update failed' };
     }
   }
 
-  async signUp(email: string, password: string): Promise<void> {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-      throw new Error('Authentication service not available');
-    }
-
-    try {
-      // Check if user already exists
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', email)
-        .single();
-
-      if (existingUser) {
-        throw new Error('EMAIL_IN_USE');
+  onAuthStateChange(callback: (user: User | null) => void) {
+    const { data: authListener } = this.supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        const user: User = {
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name,
+          role: session.user.user_metadata?.role
+        };
+        callback(user);
+      } else {
+        callback(null);
       }
-
-      const { data, error } = await withRetry(
-        () => supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              role: 'user',
-              permissions: ['agents:read', 'documents:read', 'knowledge:read'],
-            },
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
-          },
-        }),
-        this.MAX_RETRIES,
-        1000
-      );
-
-      if (error) {
-        throw handleAuthError(error);
-      }
-
-      // Sync user data after successful signup
-      if (data.user) {
-        await this.syncUserData(data.user);
-      }
-    } catch (error) {
-      throw handleAuthError(error);
-    }
-  }
-
-  async signOut(): Promise<void> {
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-
-    try {
-      const { error } = await withRetry(
-        () => supabase.auth.signOut(),
-        this.MAX_RETRIES,
-        1000
-      );
-      
-      if (error) throw handleAuthError(error);
-      
-      // Clean up session
-      this.sessionManager.cleanup();
-    } catch (error) {
-      throw handleAuthError(error);
-    }
-  }
-
-  private async syncUserData(user: SupabaseUser): Promise<void> {
-    const supabase = getSupabaseClient();
-    if (!supabase) return;
-
-    try {
-      const { error } = await withRetry(
-        () => supabase
-          .from('users')
-          .upsert({
-            id: user.id,
-            email: user.email,
-            role: user.user_metadata?.role || 'user',
-            permissions: user.user_metadata?.permissions || [],
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single(),
-        this.MAX_RETRIES,
-        1000
-      );
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-    } catch (error) {
-      console.error('Error syncing user data:', error);
-    }
-  }
-
-  private transformUser(supabaseUser: SupabaseUser): User {
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email!,
-      role: (supabaseUser.user_metadata?.role || 'user') as Role,
-      permissions: supabaseUser.user_metadata?.permissions || [],
-      createdAt: new Date(supabaseUser.created_at),
-      lastLoginAt: supabaseUser.last_sign_in_at ? new Date(supabaseUser.last_sign_in_at) : undefined,
-    };
+    });
+    
+    // Return the subscription object for cleanup
+    return authListener?.subscription || { unsubscribe: () => {} };
   }
 }
+
+export const authService = new AuthService();

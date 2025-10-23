@@ -8,10 +8,15 @@ import { useKnowledgeStore } from '../../store/knowledgeStore';
 
 export const KnowledgeBase: React.FC = () => {
   const { isInitialized, isLoading, error, isConfigured } = useVectorStore();
-  const { documents, fetchDocuments } = useKnowledgeStore();
+  const { documents, fetchDocuments, isLoading: documentsLoading, error: documentsError } = useKnowledgeStore();
 
   React.useEffect(() => {
-    fetchDocuments();
+    console.log('📚 Fetching documents from Supabase...');
+    fetchDocuments().then(() => {
+      console.log(`✅ Fetched ${documents.length} documents`);
+    }).catch((err) => {
+      console.error('❌ Failed to fetch documents:', err);
+    });
   }, [fetchDocuments]);
 
   if (isLoading) {
@@ -46,7 +51,20 @@ export const KnowledgeBase: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">Knowledge Base</h1>
+          <p className="text-white/60">Manage your AI's knowledge and documents</p>
+        </div>
+      </div>
+
+      {/* Show documents error if any */}
+      {documentsError && (
+        <Alert type="error" message={documentsError} />
+      )}
+
       <KnowledgeToolbar />
       <KnowledgeList documents={documents} />
     </div>

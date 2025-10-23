@@ -115,9 +115,19 @@ export class DocumentProcessor {
       currentStep: 'vectorization'
     });
 
+    // ✅ CRITICAL: Get organization_id from document metadata
+    const organizationId = document.metadata?.organization_id || document.metadata?.organizationId || null;
+    const userId = document.metadata?.user_id || document.metadata?.userId || null;
+    const visibility = document.metadata?.visibility || 'private';
+
     // Store in vector database if available
     const vectorStore = await getVectorStore();
     if (vectorStore) {
+      // ✅ Set organization context for vector store
+      if (organizationId) {
+        vectorStore.setOrganizationContext(organizationId);
+      }
+
       await vectorStore.upsert(
         processedChunks.map(chunk => ({
           id: chunk.id,
@@ -126,6 +136,11 @@ export class DocumentProcessor {
             documentId: chunk.documentId,
             content: chunk.content,
             ...chunk.metadata,
+            // ✅ CRITICAL: Always include organization metadata for multi-tenancy
+            organization_id: organizationId,
+            user_id: userId,
+            visibility,
+            created_at: new Date().toISOString()
           },
         }))
       );

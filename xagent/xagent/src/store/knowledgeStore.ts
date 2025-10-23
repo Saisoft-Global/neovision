@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { supabase } from '../config/supabase';
 import type { Document } from '../types/document';
 import { DocumentProcessor } from '../services/document/DocumentProcessor';
+import { useOrganizationStore } from '../stores/organizationStore';  // ✅ Import org store
 
 interface KnowledgeState {
   documents: Document[];
@@ -43,25 +44,41 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => {
     addDocument: async (doc: Document) => {
       try {
         set({ error: null });
+        
+        // ✅ Get current organization context
+        const { currentOrganization } = useOrganizationStore.getState();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // ✅ Enrich document metadata with organization context
+        const enrichedDoc = {
+          ...doc,
+          metadata: {
+            ...doc.metadata,
+            organization_id: currentOrganization?.id || null,
+            user_id: user?.id || null,
+            visibility: currentOrganization ? 'organization' : 'private'
+          }
+        };
+        
         const { error } = await supabase
           .from('documents')
           .insert({
-            id: doc.id,
-            title: doc.title,
-            content: doc.content,
-            doc_type: doc.doc_type,
-            metadata: doc.metadata,
-            status: doc.status,
+            id: enrichedDoc.id,
+            title: enrichedDoc.title,
+            content: enrichedDoc.content,
+            doc_type: enrichedDoc.doc_type,
+            metadata: enrichedDoc.metadata,
+            status: enrichedDoc.status,
           });
 
         if (error) throw error;
 
         set((state) => ({
-          documents: [doc, ...state.documents]
+          documents: [enrichedDoc, ...state.documents]
         }));
 
-        // Process document after adding
-        await documentProcessor.processDocument(doc);
+        // Process document after adding (with org metadata)
+        await documentProcessor.processDocument(enrichedDoc);
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Failed to add document';
         set({ error: message });
@@ -72,6 +89,11 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => {
     addKnowledge: async (content: string, source?: string) => {
       try {
         set({ error: null });
+        
+        // ✅ Get current organization context
+        const { currentOrganization } = useOrganizationStore.getState();
+        const { data: { user } } = await supabase.auth.getUser();
+        
         const document: Document = {
           id: crypto.randomUUID(),
           title: source || 'Manual Entry',
@@ -82,6 +104,10 @@ export const useKnowledgeStore = create<KnowledgeState>((set, get) => {
             size: content.length,
             mimeType: 'text/plain',
             sourceUrl: source,
+            // ✅ CRITICAL: Include organization metadata for multi-tenancy
+            organization_id: currentOrganization?.id || null,
+            user_id: user?.id || null,
+            visibility: currentOrganization ? 'organization' : 'private'
           },
           status: 'pending'
         };

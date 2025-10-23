@@ -1,0 +1,169 @@
+{
+  "id": "hdfc_bank_api",
+  "name": "HDFC Bank API",
+  "description": "HDFC Bank Core Banking APIs for account, card, and loan operations",
+  "category": "integration",
+  "provider": "HDFC Bank",
+  "version": "1.0.0",
+  "isActive": true,
+  "requiresAuth": true,
+  
+  "auth": {
+    "type": "bearer",
+    "credentials": {
+      "api_key": "{{HDFC_API_KEY}}",
+      "base_url": "{{HDFC_API_URL}}"
+    }
+  },
+  
+  "skills": [
+    {
+      "id": "hdfc_get_balance",
+      "name": "get_account_balance",
+      "description": "Get real-time account balance for HDFC accounts",
+      
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/accounts/{{account_id}}/balance",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}",
+          "Content-Type": "application/json"
+        }
+      },
+      
+      "parameters": {
+        "account_id": {
+          "type": "string",
+          "required": true,
+          "description": "Customer account number"
+        }
+      },
+      
+      "response": {
+        "extractPath": "data",
+        "transform": {
+          "balance": "availableBalance",
+          "currency": "currency"
+        },
+        "successMessage": "Your HDFC account balance is ₹{{response.availableBalance}}"
+      },
+      
+      "errorHandling": {
+        "retryCount": 2,
+        "retryDelay": 1000,
+        "useBrowserFallback": true,
+        "browserFallbackConfig": {
+          "searchQuery": "HDFC netbanking login",
+          "websiteUrl": "https://netbanking.hdfcbank.com",
+          "instructions": "Login → Accounts → View Balance"
+        }
+      }
+    },
+    
+    {
+      "id": "hdfc_block_card",
+      "name": "block_card",
+      "description": "Block HDFC debit/credit card immediately",
+      
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/cards/{{card_id}}/block",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}",
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"reason\": \"{{reason}}\", \"requestReplacement\": {{request_replacement}}}"
+        }
+      },
+      
+      "parameters": {
+        "card_id": {
+          "type": "string",
+          "required": true,
+          "description": "Last 4 digits or full card number"
+        },
+        "reason": {
+          "type": "string",
+          "required": true,
+          "description": "Reason for blocking: lost/stolen/fraud/damaged"
+        },
+        "request_replacement": {
+          "type": "boolean",
+          "required": false,
+          "description": "Request replacement card",
+          "default": true
+        }
+      },
+      
+      "response": {
+        "successMessage": "Card ending in {{card_id}} has been blocked. {{response.message}}"
+      },
+      
+      "errorHandling": {
+        "useBrowserFallback": true,
+        "browserFallbackConfig": {
+          "websiteUrl": "https://netbanking.hdfcbank.com/cards",
+          "instructions": "Navigate to Cards → Select card → Block Card"
+        }
+      }
+    },
+    
+    {
+      "id": "hdfc_loan_eligibility",
+      "name": "check_loan_eligibility",
+      "description": "Check HDFC loan eligibility",
+      
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/loans/eligibility",
+        "headers": {
+          "Authorization": "Bearer {{api_key}}"
+        },
+        "body": {
+          "type": "json",
+          "template": "{\"customerId\": \"{{customer_id}}\", \"loanType\": \"{{loan_type}}\", \"amount\": {{amount}}}"
+        }
+      },
+      
+      "parameters": {
+        "customer_id": {
+          "type": "string",
+          "required": true,
+          "description": "Customer ID"
+        },
+        "loan_type": {
+          "type": "string",
+          "required": true,
+          "description": "personal/home/auto/education"
+        },
+        "amount": {
+          "type": "number",
+          "required": true,
+          "description": "Requested loan amount"
+        }
+      },
+      
+      "response": {
+        "transform": {
+          "eligible": "eligible",
+          "maxAmount": "maxEligibleAmount",
+          "interestRate": "currentRate"
+        },
+        "successMessage": "Eligibility: {{response.eligible}}. Max amount: ₹{{response.maxEligibleAmount}} at {{response.currentRate}}% interest"
+      },
+      
+      "errorHandling": {
+        "useBrowserFallback": true,
+        "browserFallbackConfig": {
+          "searchQuery": "HDFC loan eligibility calculator",
+          "instructions": "Use online eligibility calculator"
+        }
+      }
+    }
+  ]
+}
+
+
+

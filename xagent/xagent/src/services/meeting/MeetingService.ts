@@ -1,5 +1,5 @@
 import type { Meeting } from '../../types/meeting';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../config/supabase';
 import { MeetingAgent } from '../agents/MeetingAgent';
 import { AgentFactory } from '../agent/AgentFactory';
 import { EmailService } from '../email/EmailService';
@@ -11,10 +11,7 @@ export class MeetingService {
   private supabase;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.emailService = EmailService.getInstance();
     this.initializeAgent();
   }

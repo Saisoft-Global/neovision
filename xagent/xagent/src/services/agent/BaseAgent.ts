@@ -423,7 +423,10 @@ Would you like me to try again or handle this manually?`;
           {
             agent_id: this.id,
             current_time: new Date().toISOString(),
-            user_id: context.userId || 'anonymous'
+            user_id: context.userId || 'anonymous',
+            personality_traits: this.personality ? 
+              `Friendly: ${this.personality.friendliness}, Formal: ${this.personality.formality}, Proactive: ${this.personality.proactiveness}, Detail-oriented: ${this.personality.detail_orientation}` :
+              'Balanced and professional'
           }
         );
 
@@ -830,6 +833,77 @@ Provide a brief summary in 2-3 sentences.`;
     try {
       console.log(`🌟 [OPTIMIZED] Generating enhanced response with all features...`);
       
+      // 🔍 CHECK FOR ACTION INTENT FIRST (booking, browsing, etc.)
+      const actionDetection = await this.detectBrowserActionIntent(userMessage);
+      if (actionDetection.needsAction && actionDetection.confidence > 0.7) {
+        console.log(`🌐 ⚡ BROWSER ACTION DETECTED: ${actionDetection.actionType} (confidence: ${actionDetection.confidence})`);
+        console.log(`🚀 Triggering browser automation instead of LLM...`);
+        
+        // Execute fallback via backend API
+        try {
+          const response = await fetch('http://localhost:8000/api/browser/fallback', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              task: userMessage,
+              intent: actionDetection.actionType,
+              userContext: {
+                conversationHistory,
+                extractedParameters: actionDetection.parameters,
+                agentType: this.type,
+                userId
+              },
+              userId,
+              agentId: this.id,
+              organizationId: this.organizationId || undefined
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`Backend API error: ${response.status} ${response.statusText}`);
+          }
+
+          const fallbackResult = await response.json();
+
+          // Format browser automation result
+          let message = `✅ **${actionDetection.actionType.toUpperCase()} COMPLETED VIA BROWSER AUTOMATION**\n\n`;
+          
+          if (fallbackResult.siteUsed) {
+            message += `🌐 **Website:** ${fallbackResult.siteUsed}\n\n`;
+          }
+          
+          if (fallbackResult.executionSteps && fallbackResult.executionSteps.length > 0) {
+            message += `**Steps Executed:**\n`;
+            fallbackResult.executionSteps.forEach((step, i) => {
+              message += `${i + 1}. ${step}\n`;
+            });
+            message += '\n';
+          }
+          
+          if (fallbackResult.result) {
+            message += `**Result:**\n${fallbackResult.result}\n\n`;
+          }
+          
+          if (fallbackResult.learnings && fallbackResult.learnings.length > 0) {
+            message += `**💡 Learnings (for future use):**\n`;
+            fallbackResult.learnings.forEach((learning, i) => {
+              message += `${i + 1}. ${learning}\n`;
+            });
+          }
+
+          console.log('✅ Browser automation completed successfully!');
+          
+          return message;
+          
+        } catch (browserError) {
+          console.error('❌ Browser automation failed:', browserError);
+          console.log('⚠️ Falling back to LLM response with error context...');
+          // Continue to normal LLM flow with error context
+        }
+      }
+      
       // Helper function to add timeout to promises
       const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, defaultValue: T, name: string): Promise<T> => {
         return Promise.race([
@@ -861,12 +935,12 @@ Provide a brief summary in 2-3 sentences.`;
           return result;
         })(),
         
-        // RAG context (10s timeout)
+        // RAG context (15s timeout - increased for reliability)
         (async () => {
           console.log('  🧠 Starting RAG context build...');
           const result = await withTimeout(
             this.buildRAGContext(userMessage, conversationHistory, userId),
-            10000,
+            15000,  // Increased from 10s to 15s for better stability
             { vectorResults: [], graphResults: [], memories: [], summarizedHistory: '', tokenUsage: { original: 0, optimized: 0, savings: 0 } },
             'RAG context'
           );
@@ -874,7 +948,7 @@ Provide a brief summary in 2-3 sentences.`;
           return result;
         })(),
         
-        // Journey lookup (5s timeout)
+        // Journey lookup (2s timeout - reduced for speed)
         (async () => {
           console.log('  🗺️ Starting journey lookup...');
           const result = await withTimeout(
@@ -882,7 +956,7 @@ Provide a brief summary in 2-3 sentences.`;
               const journeyOrchestrator = JourneyOrchestrator.getInstance();
               return await journeyOrchestrator.getActiveJourney(userId, this.id);
             })(),
-            5000,
+            2000,  // Reduced from 5s to 2s
             null,
             'Journey lookup'
           );
@@ -1388,6 +1462,81 @@ Related documents available: ${journey.related_documents.length}`;
       console.error('Error recording learning:', error);
       // Don't throw - learning failure shouldn't break agent
     }
+  }
+
+  /**
+   * Detect if message requires browser automation (booking, research, etc.)
+   */
+  protected async detectBrowserActionIntent(message: string): Promise<{
+    needsAction: boolean;
+    actionType: string;
+    confidence: number;
+    parameters: Record<string, any>;
+  }> {
+    const actionKeywords = {
+      booking: ['book', 'reserve', 'purchase', 'buy', 'order', 'schedule', 'bookings', 'booking'],
+      research: ['search', 'find', 'look up', 'research', 'compare', 'check', 'browse'],
+      data_gathering: ['get', 'fetch', 'retrieve', 'extract', 'collect', 'scrape'],
+      form_filling: ['fill', 'submit', 'register', 'sign up', 'apply', 'complete']
+    };
+
+    const lowerMessage = message.toLowerCase();
+    
+    for (const [actionType, keywords] of Object.entries(actionKeywords)) {
+      for (const keyword of keywords) {
+        if (lowerMessage.includes(keyword)) {
+          // High confidence if booking/travel related
+          const isBooking = lowerMessage.includes('flight') || 
+                          lowerMessage.includes('hotel') || 
+                          lowerMessage.includes('ticket') ||
+                          lowerMessage.includes('train') ||
+                          lowerMessage.includes('bus') ||
+                          lowerMessage.includes('travel') ||
+                          lowerMessage.includes('trip') ||
+                          lowerMessage.includes('itinerary') ||
+                          lowerMessage.includes('itenary');
+          
+          const confidence = isBooking ? 0.95 : 0.75;
+          
+          return {
+            needsAction: true,
+            actionType,
+            confidence,
+            parameters: this.extractActionParameters(message, actionType)
+          };
+        }
+      }
+    }
+
+    return { needsAction: false, actionType: '', confidence: 0, parameters: {} };
+  }
+
+  /**
+   * Extract parameters from user message for browser automation
+   */
+  protected extractActionParameters(message: string, actionType: string): Record<string, any> {
+    const params: Record<string, any> = {};
+    
+    // Extract dates
+    const dateMatch = message.match(/\d{4}-\d{2}-\d{2}/);
+    if (dateMatch) params.date = dateMatch[0];
+    
+    // Extract origin/destination
+    const fromMatch = message.match(/from\s+([A-Za-z\s]+?)(?:\s+to|\s+for)/i);
+    if (fromMatch) params.origin = fromMatch[1].trim();
+    
+    const toMatch = message.match(/to\s+([A-Za-z\s]+?)(?:\s+on|\s+for|\s*$)/i);
+    if (toMatch) params.destination = toMatch[1].trim();
+    
+    // Extract travel class
+    const classMatch = message.match(/(economy|business|first|premium)/i);
+    if (classMatch) params.class = classMatch[1].toLowerCase();
+    
+    // Extract passenger count
+    const passengerMatch = message.match(/(\d+)\s*(person|passenger|people|adult)/i);
+    if (passengerMatch) params.passengers = parseInt(passengerMatch[1]);
+    
+    return params;
   }
 
   /**

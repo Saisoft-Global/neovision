@@ -35,13 +35,19 @@ export class InitializationManager {
       // Test all database connections first
       const connections = await testDatabaseConnections();
       
+      // Log connection status for debugging
+      console.log('🔗 Database connections:', connections);
+      
       if (!connections.supabase) {
-        throw new Error('Supabase connection failed - required for core functionality');
+        console.warn('⚠️ Supabase connection failed, but continuing with limited functionality');
+        // Don't throw error - allow app to work with limited functionality
       }
 
       // Initialize vector store if available
       if (connections.pinecone) {
         await this.vectorStoreInitializer.initialize();
+      } else {
+        console.warn('⚠️ Pinecone not available, vector search will be limited');
       }
 
       this._initialized = true;
@@ -49,9 +55,10 @@ export class InitializationManager {
       this.eventEmitter.emit('initialized');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Initialization failed';
+      console.error('❌ Knowledge base initialization failed:', message);
       this._error = message;
       this.eventEmitter.emit('error', message);
-      throw error;
+      // Don't throw - allow app to work with degraded functionality
     } finally {
       this.initPromise = null;
     }

@@ -1,0 +1,189 @@
+{
+  "description": "Test scenarios for Sales Copilot AI Agent",
+  "total_scenarios": 100,
+  "categories": {
+    "lead_generation": 25,
+    "email_personalization": 25,
+    "lead_scoring": 20,
+    "crm_operations": 15,
+    "follow_up_timing": 15
+  },
+  "scenarios": [
+    {
+      "id": "sales-001",
+      "category": "lead_generation",
+      "input": {
+        "query": "Find me 10 SaaS CFOs in New York who might need accounting software",
+        "context": {
+          "product": "CloudBooks - Cloud Accounting Software",
+          "target_company_size": "50-200 employees",
+          "target_funding_stage": "Series A-B"
+        }
+      },
+      "expected_output": {
+        "leads_count": 10,
+        "leads": [
+          {
+            "name": "Sarah Chen",
+            "title": "CFO",
+            "company": "TechFlow",
+            "location": "New York, NY",
+            "company_size": "75 employees",
+            "funding": "Series B - $20M",
+            "current_tool": "QuickBooks",
+            "pain_points": ["manual workflows", "scaling issues"],
+            "contact": {
+              "email": "sarah@techflow.com",
+              "linkedin": "linkedin.com/in/sarahchen"
+            },
+            "score": 85
+          }
+        ],
+        "enrichment_complete": true,
+        "ready_for_outreach": true
+      },
+      "pass_criteria": {
+        "returns_exact_count": 10,
+        "all_match_criteria": true,
+        "includes_contact_info": true,
+        "identifies_pain_points": true
+      }
+    },
+    {
+      "id": "sales-002",
+      "category": "email_personalization",
+      "input": {
+        "lead": {
+          "name": "Michael Rodriguez",
+          "title": "VP Finance",
+          "company": "DataCorp",
+          "pain_points": ["Company grew 300% last year", "Using basic QuickBooks"],
+          "recent_activity": "Posted on LinkedIn about finance automation"
+        },
+        "template_type": "cold_outreach"
+      },
+      "expected_output": {
+        "subject": "Scaling DataCorp's Finance Operations",
+        "body_includes": [
+          "Congratulations on DataCorp's 300% growth",
+          "Reference to finance automation post",
+          "Specific pain point (QuickBooks limitations)",
+          "Relevant case study",
+          "Clear CTA"
+        ],
+        "tone": "professional",
+        "personalization_score": 0.9,
+        "word_count_range": [150, 250]
+      },
+      "pass_criteria": {
+        "includes_all_personalization": true,
+        "mentions_pain_point": true,
+        "has_clear_cta": true,
+        "appropriate_length": true
+      }
+    },
+    {
+      "id": "sales-003",
+      "category": "lead_scoring",
+      "input": {
+        "lead": {
+          "name": "Amanda Wu",
+          "title": "CFO",
+          "company": "CloudScale",
+          "company_size": "150 employees",
+          "funding": "Series C - $50M",
+          "engagement": {
+            "email_opens": 3,
+            "link_clicks": 2,
+            "website_visits": 1,
+            "linkedin_profile_view": true
+          },
+          "fit": {
+            "matches_icp": true,
+            "budget_authority": true,
+            "pain_point_severity": "high"
+          }
+        }
+      },
+      "expected_output": {
+        "score": 92,
+        "category": "hot_lead",
+        "reasoning": {
+          "engagement_score": 35,
+          "fit_score": 40,
+          "timing_score": 17
+        },
+        "recommended_action": "Book demo call within 24 hours",
+        "talking_points": [
+          "Recent acquisition (integration challenges)",
+          "High engagement (opened 3x)",
+          "Budget authority"
+        ]
+      },
+      "pass_criteria": {
+        "score_above_90": true,
+        "classified_as_hot": true,
+        "provides_action": true
+      }
+    },
+    {
+      "id": "sales-004",
+      "category": "crm_operations",
+      "input": {
+        "action": "add_lead",
+        "lead_data": {
+          "name": "John Smith",
+          "email": "john@example.com",
+          "company": "Example Corp",
+          "title": "CFO",
+          "source": "LinkedIn"
+        }
+      },
+      "expected_output": {
+        "crm_entry_created": true,
+        "lead_id": "CRM-12345",
+        "stage": "New Lead",
+        "assigned_to": "sales_rep_1",
+        "follow_up_scheduled": "2025-01-24T10:00:00Z",
+        "tags": ["CFO", "SaaS", "LinkedIn"],
+        "enrichment_triggered": true
+      },
+      "pass_criteria": {
+        "creates_crm_entry": true,
+        "schedules_follow_up": true,
+        "assigns_owner": true
+      }
+    },
+    {
+      "id": "sales-005",
+      "category": "follow_up_timing",
+      "input": {
+        "lead": {
+          "name": "Lisa Johnson",
+          "last_contact": "2025-01-20T14:00:00Z",
+          "status": "email_opened",
+          "engagement_history": [
+            {"type": "email_sent", "date": "2025-01-20T14:00:00Z"},
+            {"type": "email_opened", "date": "2025-01-20T15:30:00Z"}
+          ]
+        },
+        "current_time": "2025-01-22T10:00:00Z"
+      },
+      "expected_output": {
+        "should_follow_up": true,
+        "optimal_time": "2025-01-22T14:00:00Z",
+        "reasoning": "Opened email but no response after 2 days - optimal follow-up window",
+        "follow_up_type": "soft_nudge",
+        "message_suggestion": "Just wanted to follow up on my previous email. Would you be interested in a quick 15-minute call to discuss how we can help DataCorp?"
+      },
+      "pass_criteria": {
+        "identifies_follow_up_need": true,
+        "suggests_optimal_time": true,
+        "provides_message": true
+      }
+    }
+  ],
+  "placeholder_note": "This file contains 5 sample scenarios. Full implementation would include 100+ scenarios."
+}
+
+

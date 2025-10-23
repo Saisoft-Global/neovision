@@ -1,5 +1,6 @@
 import { createChatCompletion as openAIChat } from './openai';
 import { generateCompletion as ollamaChat } from './ollama';
+import { createChatCompletion as groqChat } from './groq';
 import { generateCompletion as rasaChat } from './rasa';
 import { isRasaAvailable } from './rasa';
 import { isServiceConfigured } from '../../../config/environment';
@@ -9,7 +10,7 @@ import { ErrorHandler } from '../../../utils/errors/ErrorHandler';
 
 export class LLMProviderManager {
   private static instance: LLMProviderManager;
-  private fallbackOrder: LLMProvider[] = ['openai', 'ollama', 'rasa'];
+  private fallbackOrder: LLMProvider[] = ['openai', 'groq', 'ollama', 'rasa'];
   private availableProviders: Set<LLMProvider>;
   private isRasaAvailable: boolean = false;
   private logger: Logger;
@@ -24,10 +25,14 @@ export class LLMProviderManager {
 
   private async initializeProviders(): Promise<void> {
     try {
-      // Check OpenAI and Ollama configuration
+      // Check OpenAI, Groq and Ollama configuration
       if (isServiceConfigured('openai')) {
         this.availableProviders.add('openai');
         this.logger.info('OpenAI provider initialized', 'llm');
+      }
+      if (isServiceConfigured('groq')) {
+        this.availableProviders.add('groq' as LLMProvider);
+        this.logger.info('Groq provider initialized', 'llm');
       }
       
       if (isServiceConfigured('ollama')) {
@@ -94,6 +99,9 @@ export class LLMProviderManager {
             break;
           case 'ollama':
             response = await ollamaChat(messages, config.model, config.temperature);
+            break;
+          case 'groq':
+            response = await groqChat(messages, config.model, config.temperature);
             break;
           case 'rasa':
             response = await rasaChat(messages);

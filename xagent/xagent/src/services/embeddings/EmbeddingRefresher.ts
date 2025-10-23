@@ -1,6 +1,6 @@
 import { DocumentProcessor } from '../knowledge/document/DocumentProcessor';
 import { vectorStore } from '../pinecone/client';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../config/supabase';
 
 export class EmbeddingRefresher {
   private supabase;
@@ -8,10 +8,7 @@ export class EmbeddingRefresher {
   private refreshInterval: number = 24 * 60 * 60 * 1000; // 24 hours
 
   constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.processor = new DocumentProcessor();
     this.startRefreshCycle();
   }

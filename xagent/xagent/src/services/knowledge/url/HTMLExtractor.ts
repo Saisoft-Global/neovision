@@ -95,62 +95,104 @@ export class HTMLExtractor {
   }
 
   private extractBodyContent(doc: Document): string {
-    // Get all text nodes
-    const textNodes: string[] = [];
-    const walker = document.createTreeWalker(
-      doc.body,
-      NodeFilter.SHOW_TEXT,
-      {
-        acceptNode: (node) => {
-          // Skip if parent is hidden
-          const parent = node.parentElement;
-          if (!parent || this.isHiddenElement(parent)) {
-            return NodeFilter.FILTER_REJECT;
-          }
+    try {
+      // Get all text nodes
+      const textNodes: string[] = [];
+      const walker = document.createTreeWalker(
+        doc.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode: (node) => {
+            // Skip if parent is hidden
+            const parent = node.parentElement;
+            if (!parent || this.isHiddenElement(parent)) {
+              return NodeFilter.FILTER_REJECT;
+            }
 
-          // Skip if text is too short
-          const text = node.textContent?.trim() || '';
-          if (text.length < 20) {
-            return NodeFilter.FILTER_REJECT;
-          }
+            // Skip if text is too short
+            const text = node.textContent?.trim() || '';
+            if (text.length < 20) {
+              return NodeFilter.FILTER_REJECT;
+            }
 
-          // Skip if parent has certain classes/attributes
-          if (this.isUnwantedElement(parent)) {
-            return NodeFilter.FILTER_REJECT;
-          }
+            // Skip if parent has certain classes/attributes
+            if (this.isUnwantedElement(parent)) {
+              return NodeFilter.FILTER_REJECT;
+            }
 
-          return NodeFilter.FILTER_ACCEPT;
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        }
+      );
+
+      let node;
+      while (node = walker.nextNode()) {
+        const text = node.textContent?.trim();
+        if (text) {
+          textNodes.push(text);
         }
       }
-    );
 
-    let node;
-    while (node = walker.nextNode()) {
-      const text = node.textContent?.trim();
-      if (text) {
-        textNodes.push(text);
+      // Join text nodes with proper spacing
+      const content = textNodes
+        .map(text => text.replace(/\s+/g, ' ').trim())
+        .filter(text => text.length > 0)
+        .join('\n\n');
+
+      const sanitized = sanitizeContent(content);
+      if (sanitized.length < this.MIN_CONTENT_LENGTH) {
+        throw new Error('Insufficient content found in document');
       }
+
+      return sanitized;
+    } catch (error) {
+      console.warn('TreeWalker failed, using fallback extraction:', error);
+      
+      // Fallback: simple text extraction
+      const bodyText = doc.body?.textContent || doc.documentElement?.textContent || '';
+      const sanitized = sanitizeContent(bodyText);
+      
+      if (sanitized.length < this.MIN_CONTENT_LENGTH) {
+        throw new Error('Insufficient content found in document (fallback)');
+      }
+      
+      return sanitized;
     }
-
-    // Join text nodes with proper spacing
-    const content = textNodes
-      .map(text => text.replace(/\s+/g, ' ').trim())
-      .filter(text => text.length > 0)
-      .join('\n\n');
-
-    const sanitized = sanitizeContent(content);
-    if (sanitized.length < this.MIN_CONTENT_LENGTH) {
-      throw new Error('Insufficient content found in document');
-    }
-
-    return sanitized;
   }
 
   private isHiddenElement(element: Element): boolean {
-    const style = window.getComputedStyle(element);
-    return style.display === 'none' || 
-           style.visibility === 'hidden' || 
-           style.opacity === '0';
+    // Check inline styles first (safer for server environments)
+    const style = element.getAttribute('style');
+    if (style) {
+      const styleLower = style.toLowerCase();
+      if (styleLower.includes('display:none') || 
+          styleLower.includes('visibility:hidden') || 
+          styleLower.includes('opacity:0')) {
+        return true;
+      }
+    }
+
+    // Check common hidden classes
+    const classList = element.className.toLowerCase();
+    if (classList.includes('hidden') || 
+        classList.includes('sr-only') || 
+        classList.includes('visually-hidden')) {
+      return true;
+    }
+
+    // Only use window.getComputedStyle if available (browser environment)
+    if (typeof window !== 'undefined' && window.getComputedStyle) {
+      try {
+        const computedStyle = window.getComputedStyle(element);
+        return computedStyle.display === 'none' || 
+               computedStyle.visibility === 'hidden' || 
+               computedStyle.opacity === '0';
+      } catch (error) {
+        console.warn('Failed to get computed style:', error);
+      }
+    }
+
+    return false;
   }
 
   private isUnwantedElement(element: Element): boolean {

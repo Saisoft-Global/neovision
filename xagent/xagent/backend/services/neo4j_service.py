@@ -1,4 +1,8 @@
-from neo4j import GraphDatabase
+try:
+    from neo4j import GraphDatabase
+    NEO4J_AVAILABLE = True
+except ImportError:
+    NEO4J_AVAILABLE = False
 from typing import Optional, List, Dict, Any
 import os
 
@@ -18,7 +22,7 @@ class Neo4jService:
         self.password = os.getenv("NEO4J_PASSWORD")
         self.driver = None
         
-        if all([self.uri, self.user, self.password]):
+        if NEO4J_AVAILABLE and all([self.uri, self.user, self.password]):
             try:
                 self.driver = GraphDatabase.driver(
                     self.uri,
@@ -26,6 +30,7 @@ class Neo4jService:
                 )
             except Exception as e:
                 print(f"Failed to initialize Neo4j: {e}")
+                self.driver = None
     
     def is_available(self) -> bool:
         """Check if Neo4j is available"""
@@ -99,11 +104,30 @@ class Neo4jService:
 
 def extract_entities(text: str) -> List[str]:
     """
-    Simple entity extraction - in production use proper NLP
+    Enhanced entity extraction with better NLP techniques
     """
-    # This is a placeholder implementation
-    words = text.split()
-    return list(set([
-        word for word in words 
-        if word[0].isupper() and len(word) > 3
-    ]))
+    import re
+    
+    # Extract capitalized words (potential proper nouns)
+    capitalized_words = re.findall(r'\b[A-Z][a-z]+\b', text)
+    
+    # Extract potential email addresses
+    emails = re.findall(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', text)
+    
+    # Extract potential phone numbers
+    phones = re.findall(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', text)
+    
+    # Extract potential URLs
+    urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', text)
+    
+    # Extract potential company/product names (words with capital letters)
+    company_names = re.findall(r'\b[A-Z][a-z]*\s+[A-Z][a-z]*\b', text)
+    
+    # Combine all entities
+    entities = capitalized_words + emails + phones + urls + company_names
+    
+    # Remove duplicates and filter out common words
+    common_words = {'The', 'This', 'That', 'These', 'Those', 'And', 'Or', 'But', 'For', 'With', 'By'}
+    entities = list(set([entity for entity in entities if entity not in common_words and len(entity) > 2]))
+    
+    return entities

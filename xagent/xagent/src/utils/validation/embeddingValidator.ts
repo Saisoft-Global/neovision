@@ -1,4 +1,4 @@
-import { getVectorIndex } from '../../services/pinecone/client';
+import { getVectorStore } from '../../services/pinecone/client';
 import { generateEmbeddings } from '../../services/openai/embeddings';
 import type { Document } from '../../types/document';
 
@@ -22,17 +22,13 @@ export class EmbeddingValidator {
       let vectorMatches = 0;
 
       if (hasEmbeddings) {
-        const vectorIndex = await getVectorIndex();
-        if (vectorIndex) {
+        const vectorStore = await getVectorStore();
+        if (vectorStore && vectorStore.isPineconeAvailable()) {
           // Query vector store for the document
-          const results = await vectorIndex.query({
-            vector: document.embeddings,
-            topK: 1,
-            includeMetadata: true,
-          });
+          const results = await vectorStore.query(document.embeddings, 1);
 
-          isStoredInVectorDB = results.matches.length > 0;
-          vectorMatches = results.matches.length;
+          isStoredInVectorDB = results.matches && results.matches.length > 0;
+          vectorMatches = results.matches ? results.matches.length : 0;
         }
       }
 
@@ -67,24 +63,20 @@ export class EmbeddingValidator {
       // Generate test embeddings
       const testEmbeddings = await generateEmbeddings(document.content);
       
-      const vectorIndex = await getVectorIndex();
-      if (!vectorIndex) {
-        throw new Error('Vector index not available');
+      const vectorStore = await getVectorStore();
+      if (!vectorStore || !vectorStore.isPineconeAvailable()) {
+        throw new Error('Vector store not available');
       }
 
       // Search for similar documents
-      const results = await vectorIndex.query({
-        vector: testEmbeddings,
-        topK: 5,
-        includeMetadata: true,
-      });
+      const results = await vectorStore.query(testEmbeddings, 5);
 
       return {
         success: true,
-        similarDocuments: results.matches.map(match => ({
+        similarDocuments: results.matches ? results.matches.map((match: any) => ({
           id: match.id,
           score: match.score,
-        }))
+        })) : []
       };
 
     } catch (error) {

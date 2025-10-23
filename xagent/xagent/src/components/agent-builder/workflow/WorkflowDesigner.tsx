@@ -20,7 +20,7 @@ export const WorkflowDesigner: React.FC<WorkflowDesignerProps> = ({ workflows, o
     removeNode,
     addConnection,
     removeConnection,
-  } = useWorkflowDesigner(workflows[0]);
+  } = useWorkflowDesigner(workflows?.[0]);
 
   return (
     <div className="space-y-4">

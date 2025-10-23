@@ -1,0 +1,300 @@
+{
+  "description": "Test scenarios for Productivity AI Agent",
+  "total_scenarios": 100,
+  "categories": {
+    "email_classification": 20,
+    "task_extraction": 20,
+    "meeting_scheduling": 15,
+    "auto_response": 15,
+    "daily_summary": 10,
+    "context_understanding": 20
+  },
+  "scenarios": [
+    {
+      "id": "prod-001",
+      "category": "email_classification",
+      "input": {
+        "email": {
+          "from": "boss@company.com",
+          "subject": "URGENT: Q4 Budget Approval Needed",
+          "body": "Hi, I need you to approve the Q4 marketing budget by EOD today. It's blocking the entire campaign launch.",
+          "timestamp": "2025-01-22T09:00:00Z"
+        }
+      },
+      "expected_output": {
+        "classification": "urgent",
+        "priority": "high",
+        "requires_action": true,
+        "action_items": [
+          "Review Q4 marketing budget",
+          "Provide approval by EOD"
+        ],
+        "suggested_response": null,
+        "auto_respond": false,
+        "reasoning": "Email from boss with URGENT flag and specific deadline (EOD)"
+      },
+      "pass_criteria": {
+        "must_classify_as": "urgent",
+        "must_extract_deadline": "EOD",
+        "must_not_auto_respond": true,
+        "confidence_threshold": 0.9
+      }
+    },
+    {
+      "id": "prod-002",
+      "category": "email_classification",
+      "input": {
+        "email": {
+          "from": "newsletter@marketing.com",
+          "subject": "Top 10 Marketing Tips for 2025",
+          "body": "Check out our latest newsletter with marketing insights...",
+          "timestamp": "2025-01-22T10:00:00Z"
+        }
+      },
+      "expected_output": {
+        "classification": "newsletter",
+        "priority": "low",
+        "requires_action": false,
+        "action_items": [],
+        "suggested_response": null,
+        "auto_respond": false,
+        "can_archive": true
+      },
+      "pass_criteria": {
+        "must_classify_as": "newsletter",
+        "priority_must_be": "low",
+        "no_action_items": true
+      }
+    },
+    {
+      "id": "prod-003",
+      "category": "task_extraction",
+      "input": {
+        "email": {
+          "from": "colleague@company.com",
+          "subject": "Project Alpha - Action Items",
+          "body": "Hey, from our meeting:\n1. Can you review the design mockups by Friday?\n2. Update the timeline spreadsheet\n3. Schedule a follow-up with the client for next week\n\nThanks!",
+          "timestamp": "2025-01-22T11:00:00Z"
+        }
+      },
+      "expected_output": {
+        "classification": "action_required",
+        "priority": "medium",
+        "action_items": [
+          {
+            "task": "Review design mockups",
+            "deadline": "Friday",
+            "project": "Project Alpha"
+          },
+          {
+            "task": "Update timeline spreadsheet",
+            "deadline": null,
+            "project": "Project Alpha"
+          },
+          {
+            "task": "Schedule follow-up with client",
+            "deadline": "next week",
+            "project": "Project Alpha"
+          }
+        ]
+      },
+      "pass_criteria": {
+        "must_extract_all_tasks": 3,
+        "must_identify_deadlines": true,
+        "must_link_to_project": "Project Alpha"
+      }
+    },
+    {
+      "id": "prod-004",
+      "category": "auto_response",
+      "input": {
+        "email": {
+          "from": "vendor@supplies.com",
+          "subject": "Invoice #12345",
+          "body": "Attached is invoice #12345 for $500. Payment due in 30 days.",
+          "timestamp": "2025-01-22T12:00:00Z"
+        },
+        "context": {
+          "user_settings": {
+            "auto_acknowledge_invoices": true
+          }
+        }
+      },
+      "expected_output": {
+        "classification": "invoice",
+        "priority": "low",
+        "requires_action": true,
+        "action_items": [
+          "Review invoice #12345",
+          "Process payment"
+        ],
+        "can_auto_respond": true,
+        "confidence": 0.95,
+        "suggested_response": "Thank you for the invoice. We have received it and will process payment within the payment terms."
+      },
+      "pass_criteria": {
+        "can_auto_respond": true,
+        "confidence_above": 0.9,
+        "response_is_professional": true
+      }
+    },
+    {
+      "id": "prod-005",
+      "category": "meeting_scheduling",
+      "input": {
+        "email": {
+          "from": "client@company.com",
+          "subject": "Can we schedule a call?",
+          "body": "Hi, I'd like to discuss the proposal. Are you available sometime next week?",
+          "timestamp": "2025-01-22T13:00:00Z"
+        },
+        "context": {
+          "user_calendar": [
+            {"date": "2025-01-27", "time": "10:00", "duration": 60, "title": "Team standup"},
+            {"date": "2025-01-28", "time": "14:00", "duration": 30, "title": "1-on-1 with manager"}
+          ]
+        }
+      },
+      "expected_output": {
+        "classification": "meeting_request",
+        "priority": "medium",
+        "requires_action": true,
+        "suggested_times": [
+          "2025-01-27 14:00",
+          "2025-01-28 10:00",
+          "2025-01-29 10:00"
+        ],
+        "draft_response": "I'd be happy to discuss the proposal. I have availability on:\n- Monday, Jan 27 at 2:00 PM\n- Tuesday, Jan 28 at 10:00 AM\n- Wednesday, Jan 29 at 10:00 AM\n\nWhich works best for you?"
+      },
+      "pass_criteria": {
+        "suggests_available_times": true,
+        "avoids_conflicts": true,
+        "professional_tone": true
+      }
+    },
+    {
+      "id": "prod-006",
+      "category": "context_understanding",
+      "input": {
+        "email": {
+          "from": "john@company.com",
+          "subject": "Re: Project Budget",
+          "body": "I agree with your proposal. Let's proceed.",
+          "timestamp": "2025-01-22T14:00:00Z"
+        },
+        "thread": [
+          {
+            "from": "user@company.com",
+            "to": "john@company.com",
+            "subject": "Project Budget",
+            "body": "Hi John, I propose we increase the budget by $10K to hire an additional designer. This will help us meet the deadline.",
+            "timestamp": "2025-01-21T16:00:00Z"
+          }
+        ]
+      },
+      "expected_output": {
+        "classification": "approval",
+        "priority": "high",
+        "requires_action": true,
+        "action_items": [
+          "Increase budget by $10K",
+          "Hire additional designer"
+        ],
+        "context_understood": true,
+        "related_to": "Project Budget increase proposal"
+      },
+      "pass_criteria": {
+        "understands_context": true,
+        "extracts_correct_actions": true,
+        "links_to_previous_thread": true
+      }
+    },
+    {
+      "id": "prod-007",
+      "category": "email_classification",
+      "input": {
+        "email": {
+          "from": "suspicious@unknown.com",
+          "subject": "You've won $1,000,000!",
+          "body": "Click here to claim your prize: http://suspicious-link.com",
+          "timestamp": "2025-01-22T15:00:00Z"
+        }
+      },
+      "expected_output": {
+        "classification": "spam",
+        "priority": "ignore",
+        "requires_action": false,
+        "should_archive": true,
+        "should_warn_user": true,
+        "security_flag": true
+      },
+      "pass_criteria": {
+        "must_classify_as_spam": true,
+        "must_not_auto_respond": true,
+        "should_flag_security": true
+      }
+    },
+    {
+      "id": "prod-008",
+      "category": "daily_summary",
+      "input": {
+        "emails": [
+          {
+            "from": "boss@company.com",
+            "subject": "URGENT: Budget approval",
+            "classification": "urgent"
+          },
+          {
+            "from": "client@company.com",
+            "subject": "Meeting request",
+            "classification": "meeting_request"
+          },
+          {
+            "from": "newsletter@service.com",
+            "subject": "Weekly digest",
+            "classification": "newsletter"
+          }
+        ],
+        "tasks": [
+          {
+            "title": "Review budget",
+            "priority": "high",
+            "deadline": "today"
+          },
+          {
+            "title": "Update spreadsheet",
+            "priority": "medium",
+            "deadline": "Friday"
+          }
+        ],
+        "meetings": [
+          {
+            "title": "Team standup",
+            "time": "10:00 AM",
+            "duration": 30
+          }
+        ]
+      },
+      "expected_output": {
+        "summary": {
+          "urgent_count": 1,
+          "action_required_count": 2,
+          "meetings_count": 1,
+          "top_priorities": [
+            "Review budget (due today)",
+            "Respond to client meeting request"
+          ],
+          "can_archive": 1
+        }
+      },
+      "pass_criteria": {
+        "counts_are_accurate": true,
+        "prioritizes_urgent": true,
+        "includes_deadlines": true
+      }
+    }
+  ],
+  "placeholder_note": "This file contains 9 sample scenarios. Full implementation would include 100+ scenarios covering edge cases, multi-step tasks, ambiguous requests, error scenarios, etc."
+}
+
+

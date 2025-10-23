@@ -3,6 +3,8 @@ export class CORSProxy {
     'https://api.allorigins.win/raw?url=',
     'https://corsproxy.io/?',
     'https://api.codetabs.com/v1/proxy?quest=',
+    'https://thingproxy.freeboard.io/fetch/',
+    'https://cors-anywhere.herokuapp.com/',
   ];
 
   private static proxyIndex = 0;
@@ -12,6 +14,11 @@ export class CORSProxy {
   private static readonly MAX_REQUESTS_PER_WINDOW = 30;
 
   static getProxiedUrl(url: string): string {
+    // For localhost/development, try direct access first
+    if (url.includes('localhost') || url.includes('127.0.0.1') || url.includes('192.168.')) {
+      return url;
+    }
+
     // Try to get a healthy proxy that isn't rate limited
     const healthyProxy = this.getHealthyUnlimitedProxy();
     if (healthyProxy) {

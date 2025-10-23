@@ -1,91 +1,83 @@
-import { createClient } from '@supabase/supabase-js';
-import { isServiceConfigured } from '../environment';
-import { EventEmitter } from '../../utils/events/EventEmitter';
-import { withRetry } from '../../utils/retry';
-import { handleSupabaseError } from '../../utils/errors/supabase';
+// Supabase initialization service with graceful fallback
+import { getSupabaseClient, isSupabaseAvailable } from './index';
 
-class SupabaseInitializer {
+export class SupabaseInitializer {
   private static instance: SupabaseInitializer;
-  private client: any = null;
-  private eventEmitter: EventEmitter;
+  private isInitialized = false;
   private initPromise: Promise<void> | null = null;
-  private initialized: boolean = false;
+  private callbacks: Array<() => void> = [];
+  private errorCallbacks: Array<(error: Error) => void> = [];
 
-  private constructor() {
-    this.eventEmitter = new EventEmitter();
-  }
-
-  public static getInstance(): SupabaseInitializer {
-    if (!this.instance) {
-      this.instance = new SupabaseInitializer();
+  static getInstance(): SupabaseInitializer {
+    if (!SupabaseInitializer.instance) {
+      SupabaseInitializer.instance = new SupabaseInitializer();
     }
-    return this.instance;
+    return SupabaseInitializer.instance;
   }
 
   async initialize(): Promise<void> {
-    if (this.initialized) return;
-    if (this.initPromise) return this.initPromise;
+    if (this.isInitialized) {
+      return;
+    }
 
-    this.initPromise = withRetry(async () => {
-      if (!isServiceConfigured('supabase')) {
-        throw new Error('Supabase configuration missing');
-      }
+    if (this.initPromise) {
+      return this.initPromise;
+    }
 
-      try {
-        this.client = createClient(
-          import.meta.env.VITE_SUPABASE_URL,
-          import.meta.env.VITE_SUPABASE_ANON_KEY,
-          {
-            auth: {
-              autoRefreshToken: true,
-              persistSession: true,
-              detectSessionInUrl: true,
-              storage: window.localStorage,
-            }
-          }
-        );
-
-        // Test connection with a simple query
-        const { error } = await this.client
-          .from('health_check')
-          .select('count')
-          .maybeSingle();
-
-        if (error && error.code !== 'PGRST116') {
-          throw handleSupabaseError(error);
-        }
-
-        this.initialized = true;
-        this.eventEmitter.emit('initialized', this.client);
-      } catch (error) {
-        this.initialized = false;
-        this.client = null;
-        throw error;
-      } finally {
-        this.initPromise = null;
-      }
-    });
-
+    this.initPromise = this.performInitialization();
     return this.initPromise;
   }
 
-  getClient() {
-    return this.client;
-  }
+  private async performInitialization(): Promise<void> {
+    try {
+      if (!isSupabaseAvailable()) {
+        console.warn('Supabase not available, using mock initialization');
+        this.isInitialized = true;
+        this.notifyCallbacks();
+        return;
+      }
 
-  isInitialized(): boolean {
-    return this.initialized;
-  }
+      const supabase = getSupabaseClient();
+      
+      // Test connection
+      const { data, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        console.warn('Supabase session check failed:', error.message);
+      }
 
-  onInitialized(callback: (client: any) => void): void {
-    if (this.initialized && this.client) {
-      callback(this.client);
+      this.isInitialized = true;
+      this.notifyCallbacks();
+    } catch (error) {
+      console.error('Supabase initialization failed:', error);
+      this.notifyErrorCallbacks(error as Error);
+      throw error;
     }
-    this.eventEmitter.on('initialized', callback);
+  }
+
+  onInitialized(callback: () => void): void {
+    if (this.isInitialized) {
+      callback();
+    } else {
+      this.callbacks.push(callback);
+    }
   }
 
   onError(callback: (error: Error) => void): void {
-    this.eventEmitter.on('error', callback);
+    this.errorCallbacks.push(callback);
+  }
+
+  private notifyCallbacks(): void {
+    this.callbacks.forEach(callback => callback());
+    this.callbacks = [];
+  }
+
+  private notifyErrorCallbacks(error: Error): void {
+    this.errorCallbacks.forEach(callback => callback(error));
+  }
+
+  getIsInitialized(): boolean {
+    return this.isInitialized;
   }
 }
 

@@ -62,3 +62,19 @@ class Task(TaskBase):
 
     class Config:
         from_attributes = True
+
+class DocumentBase(BaseModel):
+    filename: str
+    content: str
+    size: int
+    content_type: Optional[str] = None
+
+class DocumentCreate(DocumentBase):
+    pass
+
+class Document(DocumentBase):
+    id: str
+    created_at: datetime = None
+
+    class Config:
+        from_attributes = True

@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../../../config/supabase';
 import type { AgentTemplate } from './AgentTemplate';
 import { AGENT_TEMPLATES } from './AgentTemplate';
 import { KnowledgeService } from '../../knowledge/KnowledgeService';
@@ -9,10 +9,7 @@ export class TemplateManager {
   private knowledgeService: KnowledgeService;
 
   private constructor() {
-    this.supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
-    );
+    this.supabase = getSupabaseClient();
     this.knowledgeService = KnowledgeService.getInstance();
   }
 

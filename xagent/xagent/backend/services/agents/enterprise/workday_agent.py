@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from ..base_agent import BaseAgent
-from ....app.schemas import AgentStatus
+from app.schemas import AgentStatus
 
 class WorkdayAgent(BaseAgent):
     async def process_task(self, task_type: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
